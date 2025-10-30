@@ -127,6 +127,9 @@ systemctl status NetworkManager
 ### View Connection History
 Open connex → Menu → View History
 
+## Screenshot
+![screenshot](https://github.com/Lluciocc/connex/blob/271480cd7ee49023c803a679a88d3709e1ee6b71/screenshot01.png)
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
