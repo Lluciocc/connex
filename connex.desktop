@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=connex
+GenericName=Network Manager
+Comment=Modern Wi-Fi Manager for Hyprland
+Exec=connex
+Icon=connex
+Terminal=false
+Type=Application
+Categories=Network;System;Settings;GTK;
+Keywords=wifi;network;wireless;connection;networkmanager;
+StartupNotify=true
+X-GNOME-UsesNotifications=true

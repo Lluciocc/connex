@@ -1,0 +1,12 @@
+[Desktop Entry]
+Name=connex Tray
+Comment=connex System Tray Icon
+Exec=connex --tray
+Icon=connex
+Terminal=false
+Type=Application
+Categories=Network;System;
+X-GNOME-Autostart-enabled=true
+X-KDE-autostart-after=panel
+Hidden=false
+NoDisplay=true
