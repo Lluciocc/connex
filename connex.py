@@ -17,6 +17,7 @@ from pathlib import Path
 
 gi.require_version("Gtk", "3.0")
 gi.require_version('AppIndicator3', '0.1')
+gi.require_version('Notify', '0.7')
 from gi.repository import Gtk, GObject, GLib, Gdk, Notify, AppIndicator3
 
 # Configuration
@@ -252,11 +253,11 @@ class LogViewerDialog(Gtk.Dialog):
 
 
 class WifiWindow(Gtk.Window):
-    def __init__(self):
+    def __init__(self, no_scan=False):
         super().__init__(title="connex")
         self.set_default_size(700, 550)
         self.set_border_width(0)
-        
+
         # Apply theme
         self.apply_theme()
         
@@ -314,6 +315,11 @@ class WifiWindow(Gtk.Window):
         menu.show_all()
         menu_button.set_popup(menu)
         header.pack_end(menu_button)
+        
+        # Window rezize
+        self.last_resize_time = datetime.now()
+        self.connect("configure-event", self.on_configure_event)
+        self.connect("size-allocate", self.on_size_allocate)
         
         # Main container
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
@@ -408,9 +414,13 @@ class WifiWindow(Gtk.Window):
         self.current_ssid = None
         
         # Auto-refresh timer (every 10 seconds)
-        self.auto_refresh = True
-        GLib.timeout_add_seconds(10, self.auto_scan)
-        
+        self.no_scan = no_scan
+        if not self.no_scan:
+            self.auto_refresh = True
+            GLib.timeout_add_seconds(10, self.auto_scan)
+        else:
+            self.auto_refresh = False
+                
         # Update header status periodically
         GLib.timeout_add_seconds(5, self.update_header_status)
         
@@ -418,7 +428,8 @@ class WifiWindow(Gtk.Window):
         Notify.init("connex")
         
         self.show_all()
-        GLib.idle_add(self.scan_networks)
+        if not no_scan:
+            GLib.idle_add(self.scan_networks)
         GLib.idle_add(self.update_header_status)
     
     def apply_theme(self):
@@ -524,7 +535,7 @@ class WifiWindow(Gtk.Window):
         """Execute shell command"""
         try:
             log_debug(f"Running: {cmd}")
-            res = subprocess.run(shlex.split(cmd), capture_output=True, text=True, timeout=10)
+            res = subprocess.run(shlex.split(cmd), capture_output=True, text=True, timeout=8)
             log_debug(f"Result: {res.returncode}, stdout: {res.stdout[:100]}")
             return res.returncode, res.stdout.strip(), res.stderr.strip()
         except subprocess.TimeoutExpired:
@@ -547,6 +558,7 @@ class WifiWindow(Gtk.Window):
     
     def scan_networks(self, silent=False):
         """Scan for available networks"""
+
         if not silent:
             self.status_label.set_text("Scanning networks...")
             self.status_bar.set_message_type(Gtk.MessageType.INFO)
@@ -564,6 +576,11 @@ class WifiWindow(Gtk.Window):
     
     def update_network_list(self, code, out, err, silent):
         """Update the network list (runs in main thread)"""
+
+        if not self.is_visible() or not self.get_window().get_state() & Gdk.WindowState.FOCUSED:
+            return False
+
+
         self.scan_button.set_sensitive(True)
         
         if code != 0:
@@ -620,6 +637,22 @@ class WifiWindow(Gtk.Window):
     def on_scan_clicked(self, *_):
         """Manual scan button clicked"""
         self.scan_networks()
+
+    def on_configure_event(self, widget, event):
+        """Pause auto-refresh when resizing"""
+        self.auto_refresh = False
+        self.last_resize_time = datetime.now()
+        return False
+
+    def on_size_allocate(self, widget, allocation):
+        """Resume scanning a bit after resizing stops"""
+        def reenable():
+            if (datetime.now() - self.last_resize_time).total_seconds() > 1.5:
+                self.auto_refresh = not self.no_scan
+                return False
+            return True
+        GLib.timeout_add(1500, reenable)
+
     
     def connect_hidden_network(self, *_):
         """Connect to hidden network"""
@@ -1068,7 +1101,8 @@ def main():
                        help="CLI mode")
     parser.add_argument("--ssid", help="SSID for CLI connect/disconnect")
     parser.add_argument("--password", help="Password for CLI connect")
-    
+    parser.add_argument("--no-scan", action="store_true", help="Disable auto scanning")
+
     args = parser.parse_args()
     
     DEBUG_MODE = args.debug
@@ -1115,7 +1149,7 @@ def main():
         Gtk.main()
     else:
         # Normal window mode
-        win = WifiWindow()
+        win = WifiWindow(no_scan=args.no_scan)
         win.connect("destroy", Gtk.main_quit)
         Gtk.main()
     
