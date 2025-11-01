@@ -11,6 +11,8 @@ import threading
 import argparse
 import sys
 import os
+sys.path.append('/usr/lib/connex')
+
 import json
 from datetime import datetime
 from pathlib import Path
