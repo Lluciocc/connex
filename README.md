@@ -7,6 +7,7 @@ A beautiful and modern Wi-Fi manager designed for Hyprland and ArchLinux, built 
 - 🎨 **Modern GTK3 Interface** - Clean, dark-themed UI designed for Hyprland
 - 🔒 **Secure Password Handling** - Visual password strength indicator with revealer animation
 - 📡 **Network Management** - Connect, disconnect, and forget networks with ease
+- 🚀 **Speedtest** - Run a speedtest to test your connection
 - 🔍 **Smart Search** - Real-time network filtering
 - 🌐 **Hidden Network Support** - Connect to hidden SSIDs
 - 🔔 **Desktop Notifications** - Connection status updates
@@ -43,8 +44,11 @@ connex
 # Launch with debug logging
 connex --debug
 
-# Launch in system tray
+# Launch in system tray and window
 connex --tray
+
+# Launch only the tray
+connex --tray-only
 ```
 
 ### CLI Mode
@@ -60,6 +64,9 @@ connex --cli disconnect --ssid "MyNetwork"
 
 # Show connection status
 connex --cli status
+
+# Run a speedtest
+connex --cli speedtest
 ```
 
 ## ⚙️ Configuration
@@ -85,6 +92,10 @@ connex stores its configuration and logs in:
 
 - **Double-click** - Connect to network
 - **Right-click** - Context menu (Connect/Disconnect/Forget)
+- **CTRL + H** - Open Hidden Network  dialog
+- **CTRL + R** - Refresh the network list
+- **CTRL + F** - Focus on the search bar
+- **CTRL + Q** - Quit
 
 ## 🎨 Features in Detail
 
@@ -118,6 +129,11 @@ connex stores its configuration and logs in:
 ```bash
 connex --debug
 ```
+### Launch without automatic scan
+```bash
+connex --no-scan
+```
+
 
 ### Check NetworkManager Service
 ```bash
