@@ -224,7 +224,7 @@ class SpeedTest:
                 return self.results
             
             # Test upload
-            # self.test_upload() # I don't like it for now. 
+            #self.test_upload() # I don't like it for now. 
             
             self._report("complete", 1.0, "Test complete!")
             
@@ -262,7 +262,7 @@ def cli_speedtest():
     print(f"Download: {results['download']:.2f} Mbps")
     
     if results['upload'] > 0:
-        print(f"⬆️  Upload: {results['upload']:.2f} Mbps")
+        print(f"Upload: {results['upload']:.2f} Mbps")
     
     print("=" * 50)
     return 0
