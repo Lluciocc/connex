@@ -11,6 +11,8 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+from .WifiWindow import WifiWindow
+
 gi.require_version("Gtk", "3.0")
 gi.require_version('AppIndicator3', '0.1')
 gi.require_version('Notify', '0.7')
