@@ -1,24 +1,19 @@
 # connex - Modern Wi-Fi Manager
 
-A beautiful and modern Wi-Fi manager designed for Hyprland and ArchLinux, built with GTK3 and NetworkManager.
+**Connex** is a modern Wi-Fi manager for **Hyprland** and **ArchLinux**, built with **GTK3** and **NetworkManager**.  
+It provides a clean interface, CLI mode, and smooth integration with Linux desktops.
 
-## ✨ Features
 
-- 🎨 **Modern GTK3 Interface** - Clean, dark-themed UI designed for Hyprland
-- 🔒 **Secure Password Handling** - Visual password strength indicator with revealer animation
-- 📡 **Network Management** - Connect, disconnect, and forget networks with ease
-- 🚀 **Speedtest** - Run a speedtest to test your connection
-- 🔍 **Smart Search** - Real-time network filtering
-- 🌐 **Hidden Network Support** - Connect to hidden SSIDs
-- 🔔 **Desktop Notifications** - Connection status updates
-- 📊 **Connection History** - Full log of all connection attempts with timestamps
-- 🎯 **System Tray Integration** - AppIndicator for quick access
-- 🌐 **Internet Connectivity Check** - Automatic ping test after connection
-- 🎨 **Adaptive Theming** - Auto-detects system dark/light theme preference
-- 💻 **CLI Mode** - Script-friendly command-line interface
-- 🐛 **Debug Mode** - Detailed logging for troubleshooting
+## Features
 
-## 📦 Installation
+- Simple and modern GTK3 interface  
+- Connect, disconnect, and manage Wi-Fi networks  
+- Hidden network support  
+- Connection history  
+- Built-in speedtest  
+- Command-line mode  
+
+## Installation
 
 ### From AUR
 ```bash
@@ -34,7 +29,7 @@ cd connex
 makepkg -si
 ```
 
-## 🚀 Usage
+## Usage
 
 ### GUI Mode
 ```bash
@@ -69,13 +64,22 @@ connex --cli status
 connex --cli speedtest
 ```
 
-## ⚙️ Configuration
+### Troubleshooting
+```bash
+#Enable Debug Mode
+connex --debug
+
+# Launch without automatic scan
+connex --no-scan
+```
+
+## Configuration
 
 connex stores its configuration and logs in:
 - **Config Directory**: `~/.config/connex/`
 - **Connection History**: `~/.config/connex/history.log`
 
-## 🔧 Dependencies
+## Dependencies
 
 - `python` (>=3.9)
 - `python-gobject`
@@ -88,88 +92,20 @@ connex stores its configuration and logs in:
 - `papirus-icon-theme` - For better icon aesthetics
 - `hyprland` - Recommended window manager
 
-## ⌨️ Keyboard Shortcuts
+## Keyboard Shortcuts
 
-- **Double-click** - Connect to network
-- **Right-click** - Context menu (Connect/Disconnect/Forget)
 - **CTRL + H** - Open Hidden Network  dialog
 - **CTRL + R** - Refresh the network list
 - **CTRL + F** - Focus on the search bar
 - **CTRL + Q** - Quit
 
-## 🎨 Features in Detail
-
-### Password Dialog
-- Secure password entry with show/hide toggle
-- Real-time password strength indicator
-- Smooth reveal animation using GTK Revealer
-
-### System Tray
-- Quick access to main window
-- Fast network scanning
-- Connection status indicator
-- Right-click menu for common actions
-
-### Connection History
-- Timestamped log of all connections
-- Success/failure status
-- Signal strength recording
-- Error message tracking
-- Clear history option
-
-### Smart Network Detection
-- Automatic signal strength sorting
-- Connected network highlighting (● indicator)
-- Open vs secured network identification
-- WPA/WPA2/WPA3 security display
-
-## 🐛 Troubleshooting
-
-### Enable Debug Mode
-```bash
-connex --debug
-```
-### Launch without automatic scan
-```bash
-connex --no-scan
-```
-
-
-### Check NetworkManager Service
-```bash
-systemctl status NetworkManager
-```
-
-### View Connection History
-Open connex → Menu → View History
-
 ## Screenshot
 ![screenshot](https://github.com/Lluciocc/connex/blob/271480cd7ee49023c803a679a88d3709e1ee6b71/screenshot01.png)
 
-## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📝 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- Built with GTK3 and Python GObject
-- Uses NetworkManager for network operations
-- Inspired by modern Linux desktop environments
-- Designed for the Hyprland community
-
-## 📧 Contact
-
-Project Link: [https://github.com/lluciocc/connex](https://github.com/lluciocc/connex)
 
 ---
 

@@ -12,7 +12,7 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}"
 echo "╔═══════════════════════════════════════╗"
-echo "║     connex Installation Script          ║"
+echo "║     connex Installation Script        ║"
 echo "║  Modern Wi-Fi Manager for Hyprland    ║"
 echo "╚═══════════════════════════════════════╝"
 echo -e "${NC}"
@@ -64,17 +64,31 @@ echo -e "${BLUE}[2/4] Installing connex...${NC}"
 
 # Create directories if they don't exist
 sudo mkdir -p /usr/bin
+sudo mkdir -p /usr/lib/connex/assets/{core,tray,utils,ui}
 sudo mkdir -p /usr/share/applications
 sudo mkdir -p /usr/share/icons/hicolor/scalable/apps
 sudo mkdir -p /etc/xdg/autostart
 sudo mkdir -p /usr/share/licenses/connex
 sudo mkdir -p /usr/share/doc/connex
 
-# Install files
+# Install main script
 sudo install -Dm755 connex.py /usr/bin/connex
+
+# Install assets
+sudo install -Dm644 assets/core/speedtest.py /usr/lib/connex/assets/core/speedtest.py
+sudo install -Dm644 assets/tray/system_tray.py /usr/lib/connex/assets/tray/system_tray.py
+sudo install -Dm644 assets/utils/debug.py /usr/lib/connex/assets/utils/debug.py
+sudo install -Dm644 assets/ui/dialogs.py /usr/lib/connex/assets/ui/dialogs.py
+sudo install -Dm644 assets/ui/main_window.py /usr/lib/connex/assets/ui/main_window.py
+
+# Desktop entry and autostart
 sudo install -Dm644 connex.desktop /usr/share/applications/connex.desktop
-sudo install -Dm644 connex.svg /usr/share/icons/hicolor/scalable/apps/connex.svg
 sudo install -Dm644 connex-tray.desktop /etc/xdg/autostart/connex-tray.desktop
+
+# Icon
+sudo install -Dm644 connex.svg /usr/share/icons/hicolor/scalable/apps/connex.svg
+
+# License & docs
 sudo install -Dm644 LICENSE /usr/share/licenses/connex/LICENSE
 sudo install -Dm644 README.md /usr/share/doc/connex/README.md
 
