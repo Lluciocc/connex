@@ -4,6 +4,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GObject, GLib, Gdk, Notify, AppIndicator3
 from assets.utils.debug import HISTORY_FILE
 from assets.core.speedtest import SpeedTest
+from assets.core.proxies import ProxyManager
 
 class HiddenNetworkDialog(Gtk.Dialog):
     """Dialog for connecting to hidden networks"""
@@ -12,6 +13,13 @@ class HiddenNetworkDialog(Gtk.Dialog):
         self.add_button("Cancel", Gtk.ResponseType.CANCEL)
         self.add_button("Connect", Gtk.ResponseType.OK)
         self.set_default_size(400, 200)
+        # popup style
+        self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
+        self.set_type_hint(Gdk.WindowTypeHint.DIALOG)
+        self.set_keep_above(True)
+        self.set_decorated(True)
+        self.set_opacity(0.97)
+        self.set_resizable(False)
         
         box = self.get_content_area()
         box.set_spacing(12)
@@ -255,6 +263,14 @@ class PasswordDialog(Gtk.Dialog):
         self.add_button("Cancel", Gtk.ResponseType.CANCEL)
         self.add_button("Connect", Gtk.ResponseType.OK)
         self.set_default_size(400, 150)
+        # Make it like a "popup"
+        self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
+        self.set_keep_above(True)
+        self.set_type_hint(Gdk.WindowTypeHint.DIALOG)
+        self.set_decorated(True)
+        self.set_opacity(0.97)
+        self.set_resizable(False)
+
         
         box = self.get_content_area()
         box.set_spacing(12)
@@ -382,3 +398,315 @@ class LogViewerDialog(Gtk.Dialog):
                 HISTORY_FILE.unlink()
             buffer = self.text_view.get_buffer()
             buffer.set_text("History cleared.")
+
+class ProxyDialog(Gtk.Dialog):
+    """Dialog for proxy configuration"""
+    def __init__(self, parent):
+        super().__init__(title="Proxy Settings", parent=parent, modal=True)
+        self.add_button("Cancel", Gtk.ResponseType.CANCEL)
+        self.add_button("Disable", Gtk.ResponseType.REJECT)
+        self.add_button("Test", Gtk.ResponseType.APPLY)
+        self.add_button("Apply", Gtk.ResponseType.OK)
+        self.set_default_size(500, 400)
+        # Popup style
+        self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
+        self.set_keep_above(True)
+        self.set_type_hint(Gdk.WindowTypeHint.DIALOG)
+        self.set_decorated(True)
+        self.set_opacity(0.97)
+        self.set_resizable(False)
+        
+        self.proxy_manager = ProxyManager()
+        
+        box = self.get_content_area()
+        box.set_spacing(12)
+        box.set_margin_start(20)
+        box.set_margin_end(20)
+        box.set_margin_top(20)
+        box.set_margin_bottom(20)
+        
+        # Current status
+        status_frame = Gtk.Frame(label="Current Status")
+        status_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        status_box.set_margin_start(12)
+        status_box.set_margin_end(12)
+        status_box.set_margin_top(12)
+        status_box.set_margin_bottom(12)
+        
+        self.status_label = Gtk.Label()
+        self.status_label.set_xalign(0)
+        self.update_status_label()
+        status_box.pack_start(self.status_label, False, False, 0)
+        
+        status_frame.add(status_box)
+        box.pack_start(status_frame, False, False, 0)
+        
+        # Proxy type selector
+        type_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        type_label = Gtk.Label(label="Proxy Type:")
+        type_label.set_width_chars(12)
+        type_box.pack_start(type_label, False, False, 0)
+        
+        self.type_combo = Gtk.ComboBoxText()
+        self.type_combo.append_text("None (Direct)")
+        self.type_combo.append_text("HTTP")
+        self.type_combo.append_text("HTTPS")
+        self.type_combo.append_text("SOCKS5")
+        self.type_combo.append_text("Tor (SOCKS5)")
+        self.type_combo.set_active(0)
+        self.type_combo.connect("changed", self.on_type_changed)
+        type_box.pack_start(self.type_combo, True, True, 0)
+        
+        box.pack_start(type_box, False, False, 0)
+        
+        # Host
+        host_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        host_label = Gtk.Label(label="Host:")
+        host_label.set_width_chars(12)
+        host_box.pack_start(host_label, False, False, 0)
+        
+        self.host_entry = Gtk.Entry()
+        self.host_entry.set_placeholder_text("proxy.example.com or IP")
+        host_box.pack_start(self.host_entry, True, True, 0)
+        box.pack_start(host_box, False, False, 0)
+        
+        # Port
+        port_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        port_label = Gtk.Label(label="Port:")
+        port_label.set_width_chars(12)
+        port_box.pack_start(port_label, False, False, 0)
+        
+        self.port_entry = Gtk.Entry()
+        self.port_entry.set_placeholder_text("8080")
+        self.port_entry.set_width_chars(10)
+        port_box.pack_start(self.port_entry, False, False, 0)
+        box.pack_start(port_box, False, False, 0)
+        
+        # Authentication section
+        auth_expander = Gtk.Expander(label="Authentication (Optional)")
+        auth_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        auth_box.set_margin_start(12)
+        auth_box.set_margin_top(6)
+        
+        # Username
+        user_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        user_label = Gtk.Label(label="Username:")
+        user_label.set_width_chars(12)
+        user_box.pack_start(user_label, False, False, 0)
+        
+        self.username_entry = Gtk.Entry()
+        self.username_entry.set_placeholder_text("Optional")
+        user_box.pack_start(self.username_entry, True, True, 0)
+        auth_box.pack_start(user_box, False, False, 0)
+        
+        # Password
+        pass_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        pass_label = Gtk.Label(label="Password:")
+        pass_label.set_width_chars(12)
+        pass_box.pack_start(pass_label, False, False, 0)
+        
+        self.password_entry = Gtk.Entry()
+        self.password_entry.set_visibility(False)
+        self.password_entry.set_placeholder_text("Optional")
+        pass_box.pack_start(self.password_entry, True, True, 0)
+        auth_box.pack_start(pass_box, False, False, 0)
+        
+        auth_expander.add(auth_box)
+        box.pack_start(auth_expander, False, False, 0)
+        
+        # Bypass list
+        bypass_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        bypass_label = Gtk.Label(label="No Proxy For:")
+        bypass_label.set_width_chars(12)
+        bypass_box.pack_start(bypass_label, False, False, 0)
+        
+        self.bypass_entry = Gtk.Entry()
+        self.bypass_entry.set_text("localhost,127.0.0.1")
+        self.bypass_entry.set_placeholder_text("localhost,127.0.0.1")
+        bypass_box.pack_start(self.bypass_entry, True, True, 0)
+        box.pack_start(bypass_box, False, False, 0)
+        
+        # Test result area
+        self.test_revealer = Gtk.Revealer()
+        self.test_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
+        
+        self.test_result_label = Gtk.Label()
+        self.test_result_label.set_xalign(0)
+        self.test_result_label.set_line_wrap(True)
+        self.test_revealer.add(self.test_result_label)
+        box.pack_start(self.test_revealer, False, False, 0)
+        
+        # Info label
+        info = Gtk.Label()
+        info.set_markup("<small><i>Note: Proxy settings apply system-wide</i></small>")
+        info.set_xalign(0)
+        box.pack_start(info, False, False, 0)
+        
+        # Load current config
+        self.load_current_config()
+        
+        self.connect("response", self.on_response)
+        self.show_all()
+    
+    def update_status_label(self):
+        """Update status label with current proxy"""
+        if not self.proxy_manager:
+            self.status_label.set_markup("<b>Status:</b> Proxy module unavailable")
+            return
+        
+        status = self.proxy_manager.get_status_text()
+        if "No proxy" in status:
+            self.status_label.set_markup(f"<b>Status:</b> <span color='orange'>{status}</span>")
+        else:
+            self.status_label.set_markup(f"<b>Status:</b> <span color='green'>{status}</span>")
+    
+    def load_current_config(self):
+        """Load current proxy configuration"""
+        if not self.proxy_manager:
+            return
+        
+        config = self.proxy_manager.get_current_proxy()
+        if config.get('enabled'):
+            proxy_type = config.get('type', 'http')
+            
+            # Set combo box
+            type_map = {
+                'none': 0,
+                'http': 1,
+                'https': 2,
+                'socks5': 3
+            }
+            
+            # Check if it's Tor
+            if proxy_type == 'socks5' and config.get('host') == '127.0.0.1' and config.get('port') == '9050':
+                self.type_combo.set_active(4)  # Tor
+            else:
+                self.type_combo.set_active(type_map.get(proxy_type, 0))
+            
+            self.host_entry.set_text(config.get('host', ''))
+            self.port_entry.set_text(config.get('port', ''))
+            self.username_entry.set_text(config.get('username', ''))
+            self.password_entry.set_text(config.get('password', ''))
+            self.bypass_entry.set_text(config.get('bypass', 'localhost,127.0.0.1'))
+    
+    def on_type_changed(self, combo):
+        """Handle proxy type change"""
+        active = combo.get_active()
+        
+        if active == 0:  # None
+            self.host_entry.set_sensitive(False)
+            self.port_entry.set_sensitive(False)
+            self.username_entry.set_sensitive(False)
+            self.password_entry.set_sensitive(False)
+            self.bypass_entry.set_sensitive(False)
+        elif active == 4:  # Tor
+            self.host_entry.set_text("127.0.0.1")
+            self.port_entry.set_text("9050")
+            self.host_entry.set_sensitive(False)
+            self.port_entry.set_sensitive(False)
+            self.username_entry.set_sensitive(False)
+            self.password_entry.set_sensitive(False)
+            self.bypass_entry.set_sensitive(True)
+        else:
+            self.host_entry.set_sensitive(True)
+            self.port_entry.set_sensitive(True)
+            self.username_entry.set_sensitive(True)
+            self.password_entry.set_sensitive(True)
+            self.bypass_entry.set_sensitive(True)
+            
+            # Set default port
+            if active == 1:  # HTTP
+                self.port_entry.set_text("8080")
+            elif active == 2:  # HTTPS
+                self.port_entry.set_text("8080")
+            elif active == 3:  # SOCKS5
+                self.port_entry.set_text("1080")
+    
+    def on_response(self, dialog, response):
+        """Handle dialog response"""
+        if response == Gtk.ResponseType.APPLY:
+            # Test proxy
+            self.emit_stop_by_name("response")
+            self.test_proxy()
+            return
+        
+        if response == Gtk.ResponseType.OK:
+            # Apply proxy settings
+            self.emit_stop_by_name("response")
+            self.apply_proxy()
+            return
+
+        if response == Gtk.ResponseType.REJECT:
+            self.emit_stop_by_name("response")
+            self.type_combo.set_active(0)
+            #print(self.type_combo.get_active())
+            self.apply_proxy()
+            
+    
+    def test_proxy(self):
+        """Test proxy connection"""
+        if not self.proxy_manager:
+            self.show_test_result(False, "Proxy module unavailable")
+            return
+        
+        host = self.host_entry.get_text().strip()
+        port = self.port_entry.get_text().strip()
+        
+        if not host or not port:
+            self.show_test_result(False, "Please enter host and port")
+            return
+        
+        self.test_result_label.set_markup("<i>Testing connection...</i>")
+        self.test_revealer.set_reveal_child(True)
+        
+        def test_thread():
+            success, msg = self.proxy_manager.test_proxy(host, port)
+            GLib.idle_add(self.show_test_result, success, msg)
+        
+        threading.Thread(target=test_thread, daemon=True).start()
+    
+    def show_test_result(self, success, message):
+        """Show test result"""
+        if success:
+            self.test_result_label.set_markup(f"<span color='green'>✓ {message}</span>")
+        else:
+            self.test_result_label.set_markup(f"<span color='red'>✗ {message}</span>")
+        
+        self.test_revealer.set_reveal_child(True)
+        return False
+    
+    def apply_proxy(self):
+        """Apply proxy settings"""
+        if not self.proxy_manager:
+            return
+        
+        active = self.type_combo.get_active()
+        
+        if active == 0:  # None
+            success, msg = self.proxy_manager.disable_proxy()
+        else:
+            # Get values
+            type_map = {
+                1: 'http',
+                2: 'https',
+                3: 'socks5',
+                4: 'socks5'  # Tor
+            }
+            
+            proxy_type = type_map.get(active, 'http')
+            host = self.host_entry.get_text().strip()
+            port = self.port_entry.get_text().strip()
+            username = self.username_entry.get_text().strip()
+            password = self.password_entry.get_text().strip()
+            bypass = self.bypass_entry.get_text().strip()
+            
+            if not host or not port:
+                self.show_test_result(False, "Host and port are required")
+                return
+            
+            success, msg = self.proxy_manager.set_proxy(
+                proxy_type, host, port, username, password, bypass
+            )
+        
+        self.update_status_label()
+        self.show_test_result(success, msg)

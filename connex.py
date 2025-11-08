@@ -126,6 +126,14 @@ def main():
     )
     parser.add_argument("--ssid", help="SSID for CLI connect/disconnect")
     parser.add_argument("--password", help="Password for CLI connect")
+    # proxies
+    parser.add_argument("--proxy", dest="proxy_action",
+     choices=["status", "set", "disable", "test"],
+     help="Proxy configuration"
+    )
+    parser.add_argument("--proxy-type", help="Proxy type (http, https, socks5)")
+    parser.add_argument("--proxy-host", help="Proxy host")
+    parser.add_argument("--proxy-port", help="Proxy port")
 
     args = parser.parse_args()
     
@@ -165,6 +173,46 @@ def main():
         screen, css_provider,
         Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
     )
+
+    # proxies
+    if args.proxy_action:
+        from assets.core.proxies import ProxyManager
+        pm = ProxyManager()
+        
+        if args.proxy_action == "status":
+            print(pm.get_status_text())
+            config = pm.get_current_proxy()
+            if config.get('enabled'):
+                print(f"Type: {config.get('type')}")
+                print(f"Host: {config.get('host')}")
+                print(f"Port: {config.get('port')}")
+        
+        elif args.proxy_action == "set":
+            if not args.proxy_type or not args.proxy_host or not args.proxy_port:
+                print("Error: --proxy-type, --proxy-host, and --proxy-port required")
+                return 1
+            
+            success, msg = pm.set_proxy(
+                args.proxy_type, 
+                args.proxy_host, 
+                args.proxy_port
+            )
+            print(msg)
+            return 0 if success else 1
+        
+        elif args.proxy_action == "disable":
+            success, msg = pm.disable_proxy()
+            print(msg)
+            return 0 if success else 1
+        
+        elif args.proxy_action == "test":
+            if not args.proxy_host or not args.proxy_port:
+                print("Error: --proxy-host and --proxy-port required")
+                return 1
+            
+            success, msg = pm.test_proxy(args.proxy_host, args.proxy_port)
+            print(msg)
+            return 0 if success else 1
     
     # Tray mode
     if args.tray or args.tray_only:

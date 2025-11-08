@@ -6,8 +6,15 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GObject, GLib, Gdk, Notify, AppIndicator3
 from datetime import datetime
 from assets.utils.debug import log_debug, log_connection
-from assets.ui.dialogs import PasswordDialog, HiddenNetworkDialog, SpeedTestDialog, LogViewerDialog
 from assets.ui.main_window import WifiWindow
+from assets.ui.dialogs import (
+        PasswordDialog,
+        HiddenNetworkDialog,
+        SpeedTestDialog,
+        LogViewerDialog,
+        ProxyDialog
+    )
+
 
 class SystemTrayApp:
     """System tray integration"""
@@ -150,7 +157,7 @@ class SystemTrayApp:
 
         submenu.append(Gtk.SeparatorMenuItem())
         hidden_item = Gtk.MenuItem(label="Connect to Hidden Network...")
-        hidden_item.connect("activate", self.connect_hidden)
+        hidden_item.connect("activate", self.show_hidden_connect_dialog)
         submenu.append(hidden_item)
 
         submenu.show_all()
@@ -163,6 +170,10 @@ class SystemTrayApp:
         info_item.connect("activate", self.show_connection_info)
         info_item.set_sensitive(connected)
         menu.append(info_item)
+
+        proxy_item = Gtk.MenuItem(label="Proxy Settings")
+        proxy_item.connect("activate", self.show_proxy_settings)
+        menu.append(proxy_item)
 
         settings_item = Gtk.MenuItem(label="Open Connex Window")
         settings_item.connect("activate", self.show_window)
@@ -199,7 +210,7 @@ class SystemTrayApp:
             self.show_password_dialog(ssid, security)
     
     def show_password_dialog(self, ssid, security):
-        """Show modern password dialog"""
+        """Show password dialog"""
         dialog = PasswordDialog(None, ssid, security)
         response = dialog.run()
 
@@ -215,7 +226,20 @@ class SystemTrayApp:
         else:
             dialog.destroy()
 
-    
+    def show_proxy_settings(self, widget):
+        """Show proxy settings dialog"""
+        dialog = ProxyDialog(None)
+        dialog.run()
+        dialog.destroy()
+        return
+
+    def show_hidden_connect_dialog(self, widget):
+        """Connect to hidden network"""
+        dialog = HiddenNetworkDialog(None)
+        dialog.run()
+        dialog.destroy()
+        return
+        
     def _connect_thread(self, ssid, password):
         """Connect in background thread"""
         # Forget network first
@@ -265,80 +289,6 @@ class SystemTrayApp:
                 GLib.timeout_add(1000, self.update_menu)
             except:
                 pass
-    
-    def connect_hidden(self, widget):
-        """Connect to hidden network"""
-        dialog = Gtk.Dialog(
-            title="Connect to Hidden Network",
-            flags=Gtk.DialogFlags.MODAL
-        )
-        dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
-        dialog.add_button("Connect", Gtk.ResponseType.OK)
-        dialog.set_default_size(350, 200)
-        
-        box = dialog.get_content_area()
-        box.set_spacing(12)
-        box.set_margin_start(20)
-        box.set_margin_end(20)
-        box.set_margin_top(20)
-        box.set_margin_bottom(20)
-        
-        # SSID
-        ssid_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        ssid_label = Gtk.Label(label="SSID:")
-        ssid_label.set_width_chars(10)
-        ssid_box.pack_start(ssid_label, False, False, 0)
-        
-        ssid_entry = Gtk.Entry()
-        ssid_entry.set_placeholder_text("Network name")
-        ssid_box.pack_start(ssid_entry, True, True, 0)
-        box.pack_start(ssid_box, False, False, 0)
-        
-        # Password
-        pwd_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        pwd_label = Gtk.Label(label="Password:")
-        pwd_label.set_width_chars(10)
-        pwd_box.pack_start(pwd_label, False, False, 0)
-        
-        password_entry = Gtk.Entry()
-        password_entry.set_visibility(False)
-        password_entry.set_placeholder_text("Leave empty for open network")
-        pwd_box.pack_start(password_entry, True, True, 0)
-        box.pack_start(pwd_box, False, False, 0)
-        
-        dialog.show_all()
-        response = dialog.run()
-        
-        if response == Gtk.ResponseType.OK:
-            ssid = ssid_entry.get_text()
-            password = password_entry.get_text()
-            dialog.destroy()
-            
-            if ssid:
-                def connect_hidden_thread():
-                    args = ["nmcli", "device", "wifi", "connect", ssid, "hidden", "yes"]
-                    if password:
-                        args += ["password", password]
-                    
-                    try:
-                        result = subprocess.run(args, capture_output=True, timeout=20)
-                        if result.returncode == 0:
-                            GLib.idle_add(self.show_notification,
-                                        "Connected",
-                                        f"Connected to {ssid}",
-                                        "network-wireless")
-                            GLib.idle_add(self.update_menu)
-                        else:
-                            GLib.idle_add(self.show_notification,
-                                        "Failed",
-                                        "Could not connect to hidden network",
-                                        "network-wireless-offline")
-                    except:
-                        pass
-                
-                threading.Thread(target=connect_hidden_thread, daemon=True).start()
-        else:
-            dialog.destroy()
     
     def show_connection_info(self, widget):
         """Show connection information"""

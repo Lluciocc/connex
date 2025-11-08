@@ -6,7 +6,13 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GObject, GLib, Gdk, Notify, AppIndicator3
 from datetime import datetime
 from assets.utils.debug import log_debug, log_connection
-from assets.ui.dialogs import PasswordDialog, HiddenNetworkDialog, SpeedTestDialog, LogViewerDialog
+from assets.ui.dialogs import (
+        PasswordDialog,
+        HiddenNetworkDialog,
+        SpeedTestDialog,
+        LogViewerDialog,
+        ProxyDialog
+    )
 
 class WifiWindow(Gtk.Window):
     def __init__(self, no_scan=False):
@@ -69,6 +75,10 @@ class WifiWindow(Gtk.Window):
         speedtest_item = Gtk.MenuItem(label="Speed Test")
         speedtest_item.connect("activate", self.show_speedtest)
         menu.append(speedtest_item)
+
+        proxy_item = Gtk.MenuItem(label="Proxy Settings")
+        proxy_item.connect("activate", self.show_proxy_settings)
+        menu.append(proxy_item)
         
         menu.append(Gtk.SeparatorMenuItem())
         
@@ -379,6 +389,11 @@ class WifiWindow(Gtk.Window):
         dialog.run()
         dialog.destroy()
 
+    def show_proxy_settings(self, *_):
+        """Show proxy settings dialog"""        
+        dialog = ProxyDialog(self)
+        dialog.run()
+        dialog.destroy()
 
     def set_status_animated(self, message, message_type=Gtk.MessageType.INFO, show_spinner=False):
         """Update status with animation"""
