@@ -80,6 +80,7 @@ sudo install -Dm644 assets/tray/system_tray.py /usr/lib/connex/assets/tray/syste
 sudo install -Dm644 assets/utils/debug.py /usr/lib/connex/assets/utils/debug.py
 sudo install -Dm644 assets/ui/dialogs.py /usr/lib/connex/assets/ui/dialogs.py
 sudo install -Dm644 assets/ui/main_window.py /usr/lib/connex/assets/ui/main_window.py
+sudo install -Dm644 assets/core/proxies.py /usr/lib/connex/assets/core/proxies.py
 
 # Desktop entry and autostart
 sudo install -Dm644 connex.desktop /usr/share/applications/connex.desktop
