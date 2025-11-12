@@ -1,10 +1,17 @@
 import gi
 import threading
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GObject, GLib, Gdk, Notify, AppIndicator3
+from gi.repository import Gtk, GObject, GLib, Gdk, Notify, AppIndicator3, GdkPixbuf
 from assets.utils.debug import HISTORY_FILE
 from assets.core.speedtest import SpeedTest
 from assets.core.proxies import ProxyManager
+try:
+    import qrcode
+    from PIL import Image
+    from io import BytesIO
+    QR_AVAILABLE = True
+except ImportError:
+    QR_AVAILABLE = False
 
 class HiddenNetworkDialog(Gtk.Dialog):
     """Dialog for connecting to hidden networks"""
@@ -784,3 +791,156 @@ class ProxyDialog(Gtk.Dialog):
                 GLib.idle_add(self.response, Gtk.ResponseType.CLOSE)
             
             threading.Thread(target=close_later, daemon=True).start()
+
+class QRCodeDialog(Gtk.Dialog):
+    """Dialog to display WiFi QR code"""
+    def __init__(self, parent, ssid, password, security):
+        super().__init__(title=f"QR Code - {ssid}", parent=parent, modal=True)
+        self.add_button("Save Image", Gtk.ResponseType.APPLY)
+        self.add_button("Close", Gtk.ResponseType.CLOSE)
+        self.set_default_size(450, 550)
+        
+        box = self.get_content_area()
+        box.set_spacing(12)
+        box.set_margin_start(20)
+        box.set_margin_end(20)
+        box.set_margin_top(20)
+        box.set_margin_bottom(20)
+        
+        # Title
+        title = Gtk.Label()
+        title.set_markup(f"<b>Scan to connect to:</b>\n{ssid}")
+        title.set_xalign(0.5)
+        box.pack_start(title, False, False, 0)
+        
+        # Generate QR code
+        qr_data = self.generate_wifi_qr_data(ssid, password, security)
+        qr_image = self.create_qr_image(qr_data)
+        
+        # Display QR code
+        self.qr_pixbuf = self.pil_to_pixbuf(qr_image)
+        qr_gtk_image = Gtk.Image.new_from_pixbuf(self.qr_pixbuf)
+        
+        frame = Gtk.Frame()
+        frame.set_shadow_type(Gtk.ShadowType.IN)
+        frame.add(qr_gtk_image)
+        box.pack_start(frame, True, True, 0)
+        
+        # Info label
+        info = Gtk.Label()
+        security_text = "Open Network" if security == "Open" else f"Security: {security}"
+        info.set_markup(f"<small>{security_text}</small>")
+        info.set_xalign(0.5)
+        box.pack_start(info, False, False, 0)
+        
+        # Instructions
+        instructions = Gtk.Label()
+        instructions.set_markup(
+            "<small><i>Scan this QR code with your phone's camera\n"
+            "to connect automatically</i></small>"
+        )
+        instructions.set_xalign(0.5)
+        instructions.set_line_wrap(True)
+        box.pack_start(instructions, False, False, 0)
+        
+        self.ssid = ssid
+        self.qr_image = qr_image
+        
+        self.connect("response", self.on_response)
+        self.show_all()
+    
+    def generate_wifi_qr_data(self, ssid, password, security):
+        """Generate WiFi QR code data string"""
+        # Escape special characters
+        ssid_escaped = ssid.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace(":", "\\:")
+        password_escaped = password.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace(":", "\\:")
+        
+        # https://qrcode-library.readthedocs.io/en/stable/formats/wifi/
+        if security == "Open" or not password:
+            auth_type = "nopass"
+            qr_string = f"WIFI:T:{auth_type};S:{ssid_escaped};;"
+        else:
+            if "WEP" in security.upper():
+                auth_type = "WEP"
+            else:
+                auth_type = "WPA"
+            qr_string = f"WIFI:T:{auth_type};S:{ssid_escaped};P:{password_escaped};;"
+        
+        return qr_string
+    
+    def create_qr_image(self, data):
+        """Create QR code image"""
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(data)
+        qr.make(fit=True)
+        
+        img = qr.make_image(fill_color="black", back_color="white")
+        return img
+    
+    def pil_to_pixbuf(self, pil_image):
+        """Convert PIL Image to GdkPixbuf"""
+        if pil_image.mode != 'RGB':
+            pil_image = pil_image.convert('RGB')
+        
+        # Save to bytes
+        buffer = BytesIO()
+        pil_image.save(buffer, format='PNG')
+        buffer.seek(0)
+        
+        # Load into pixbuf
+        loader = GdkPixbuf.PixbufLoader.new_with_type('png')
+        loader.write(buffer.read())
+        loader.close()
+        
+        return loader.get_pixbuf()
+    
+    def on_response(self, dialog, response):
+        """Handle dialog response"""
+        if response == Gtk.ResponseType.APPLY:
+            # Save QR code
+            file_dialog = Gtk.FileChooserDialog(
+                title="Save QR Code",
+                parent=self,
+                action=Gtk.FileChooserAction.SAVE
+            )
+            file_dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
+            file_dialog.add_button("Save", Gtk.ResponseType.OK)
+            file_dialog.set_current_name(f"wifi_qr_{self.ssid}.png")
+            
+            # Add filter for PNG
+            filter_png = Gtk.FileFilter()
+            filter_png.set_name("PNG images")
+            filter_png.add_mime_type("image/png")
+            file_dialog.add_filter(filter_png)
+            
+            response = file_dialog.run()
+            if response == Gtk.ResponseType.OK:
+                filename = file_dialog.get_filename()
+                if not filename.endswith('.png'):
+                    filename += '.png'
+                try:
+                    self.qr_image.save(filename)
+                    notification = Notify.Notification.new(
+                        "QR Code Saved",
+                        f"Saved to {filename}",
+                        "document-save"
+                    )
+                    notification.show()
+                except Exception as e:
+                    error_dialog = Gtk.MessageDialog(
+                        parent=self,
+                        modal=True,
+                        message_type=Gtk.MessageType.ERROR,
+                        buttons=Gtk.ButtonsType.OK,
+                        text="Save Failed"
+                    )
+                    error_dialog.format_secondary_text(str(e))
+                    error_dialog.run()
+                    error_dialog.destroy()
+            
+            file_dialog.destroy()

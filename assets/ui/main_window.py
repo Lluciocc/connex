@@ -11,7 +11,9 @@ from assets.ui.dialogs import (
         HiddenNetworkDialog,
         SpeedTestDialog,
         LogViewerDialog,
-        ProxyDialog
+        ProxyDialog,
+        QRCodeDialog,
+        QR_AVAILABLE
     )
 
 class WifiWindow(Gtk.Window):
@@ -811,9 +813,39 @@ class WifiWindow(Gtk.Window):
             forget_item = Gtk.MenuItem(label="Forget Network")
             forget_item.connect("activate", lambda x: self.forget_network(ssid))
             menu.append(forget_item)
+
+            qr_item = Gtk.MenuItem(label="Generate QR Code")
+            qr_item.connect("activate", lambda x: self.show_qr_code(ssid, model[path][2]))
+            menu.append(qr_item)
         
         menu.show_all()
         menu.popup_at_pointer(event)
+
+    def show_qr_code(self, ssid, security):
+        password = ""
+        if not QR_AVAILABLE:
+            self.show_error("QR code generation requires: pip install qrcode[pil] pillow")
+            return
+        
+        if security != "Open":
+            # Try to get password from saved connection
+            code, out, err = self.run_cmd(f"nmcli -s -g 802-11-wireless-security.psk connection show '{ssid}'")
+            if code == 0 and out:
+                password = out.strip()
+            else:
+                dialog = PasswordDialog(self, ssid, security)
+                response = dialog.run()
+                if response == Gtk.ResponseType.OK:
+                    password = dialog.get_password()
+                    dialog.destroy()
+                else:
+                    dialog.destroy()
+                    return
+        
+        # Show the dialog
+        qr_dialog = QRCodeDialog(self, ssid, password, security)
+        qr_dialog.run()
+        qr_dialog.destroy()
     
     def forget_network(self, ssid, quick=False):
         """Remove saved network connection"""
