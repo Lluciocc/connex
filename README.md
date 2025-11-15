@@ -103,6 +103,8 @@ connex stores its configuration and logs in:
 
 ## Screenshot
 ![screenshot](https://github.com/Lluciocc/connex/blob/271480cd7ee49023c803a679a88d3709e1ee6b71/screenshot01.png)
+![screenshot](https://github.com/Lluciocc/connex/blob/master/screenshot02.jpg)
+
 
 ## License
 
