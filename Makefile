@@ -35,12 +35,7 @@ install:
 	install -Dm755 connex.py "$(DESTDIR)$(BINDIR)/connex"
 
 	# Assets
-	install -Dm644 assets/core/speedtest.py "$(DESTDIR)$(LIBDIR)/assets/core/speedtest.py"
-	install -Dm644 assets/tray/system_tray.py "$(DESTDIR)$(LIBDIR)/assets/tray/system_tray.py"
-	install -Dm644 assets/utils/debug.py "$(DESTDIR)$(LIBDIR)/assets/utils/debug.py"
-	install -Dm644 assets/ui/dialogs.py "$(DESTDIR)$(LIBDIR)/assets/ui/dialogs.py"
-	install -Dm644 assets/ui/main_window.py "$(DESTDIR)$(LIBDIR)/assets/ui/main_window.py"
-	install -Dm644 assets/core/proxies.py /usr/lib/connex/assets/core/proxies.py
+	cp -a assets /usr/lib/connex/
 
 	# Desktop entries & icons
 	install -Dm644 connex.desktop "$(DESTDIR)$(APPLICATIONSDIR)/connex.desktop"

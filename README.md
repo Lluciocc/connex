@@ -11,7 +11,8 @@ It provides a clean interface, CLI mode, and smooth integration with Linux deskt
 - Hidden network support  
 - Connection history  
 - Built-in speedtest  
-- Command-line mode  
+- Command-line mode 
+- QR code connection 
 
 ## Installation
 
@@ -87,6 +88,7 @@ connex stores its configuration and logs in:
 - `networkmanager`
 - `libappindicator-gtk3`
 - `libnotify`
+- `python-qrcode`
 
 ### Optional Dependencies
 - `papirus-icon-theme` - For better icon aesthetics
@@ -101,7 +103,6 @@ connex stores its configuration and logs in:
 
 ## Screenshot
 ![screenshot](https://github.com/Lluciocc/connex/blob/271480cd7ee49023c803a679a88d3709e1ee6b71/screenshot01.png)
-
 
 ## License
 

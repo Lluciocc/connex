@@ -51,6 +51,7 @@ check_dep "gtk3"
 check_dep "networkmanager"
 check_dep "libappindicator-gtk3"
 check_dep "libnotify"
+check_dep "python-qrcode"
 
 if [ ${#MISSING_DEPS[@]} -ne 0 ]; then
     echo -e "${YELLOW}📦 Missing dependencies: ${MISSING_DEPS[*]}${NC}"
@@ -74,13 +75,8 @@ sudo mkdir -p /usr/share/doc/connex
 # Install main script
 sudo install -Dm755 connex.py /usr/bin/connex
 
-# Install assets
-sudo install -Dm644 assets/core/speedtest.py /usr/lib/connex/assets/core/speedtest.py
-sudo install -Dm644 assets/tray/system_tray.py /usr/lib/connex/assets/tray/system_tray.py
-sudo install -Dm644 assets/utils/debug.py /usr/lib/connex/assets/utils/debug.py
-sudo install -Dm644 assets/ui/dialogs.py /usr/lib/connex/assets/ui/dialogs.py
-sudo install -Dm644 assets/ui/main_window.py /usr/lib/connex/assets/ui/main_window.py
-sudo install -Dm644 assets/core/proxies.py /usr/lib/connex/assets/core/proxies.py
+# copy assets
+sudo cp -a assets /usr/lib/connex/
 
 # Desktop entry and autostart
 sudo install -Dm644 connex.desktop /usr/share/applications/connex.desktop
