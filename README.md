@@ -13,6 +13,7 @@ It provides a clean interface, CLI mode, and smooth integration with Linux deskt
 - Built-in speedtest  
 - Command-line mode 
 - QR code connection 
+- Proxy system (WIP)
 
 ## Installation
 
