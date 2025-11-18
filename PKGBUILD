@@ -1,4 +1,4 @@
-# Maintainer: Lluciocc <llucio.cc00@example.com>
+# Maintainer: Lluciocc <llucio.cc00@gmail.com>
 pkgname=connex
 pkgver=1.3.0
 pkgrel=1
