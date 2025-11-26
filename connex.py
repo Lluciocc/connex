@@ -27,7 +27,7 @@ from assets.core.speedtest import SpeedTest
 from assets.ui.main_window import WifiWindow
 from assets.ui.dialogs import PasswordDialog, HiddenNetworkDialog, LogViewerDialog, SpeedTestDialog
 from assets.tray.system_tray import SystemTrayApp 
-from assets.utils.debug import ensure_config_dir
+from assets.utils.debug import ensure_config_dir, get_os
 
 
 def cli_mode(args):
@@ -110,6 +110,10 @@ def run_cmd_sync(cmd):
 
 def main():
     global DEBUG_MODE
+
+    if not get_os():
+        print("THIS PROGRAM IS NOT MADE FOR YOUR OS")
+        return
     
     parser = argparse.ArgumentParser(description="connex - Modern Wi-Fi Manager")
     # Connex args

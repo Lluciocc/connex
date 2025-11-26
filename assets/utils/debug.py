@@ -1,5 +1,6 @@
 from pathlib import Path
 from datetime import datetime
+import platform
 
 # Configuration
 CONFIG_DIR = Path.home() / ".config" / "connex"
@@ -28,3 +29,16 @@ def log_connection(ssid, signal, success, error_msg=""):
     with open(HISTORY_FILE, "a") as f:
         f.write(log_entry)
     log_debug(f"Logged: {log_entry.strip()}")
+
+def get_os() -> bool:
+    if platform.system() in ("Windows", "Darwin"):
+        return False
+    elif platform.system() == "Linux":
+        return True
+    else:
+        return False
+
+def get_distro()-> str:
+    if get_os():
+        info = platform.release()
+        return info

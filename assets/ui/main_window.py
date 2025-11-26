@@ -5,7 +5,7 @@ import shlex
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GObject, GLib, Gdk, Notify, AppIndicator3
 from datetime import datetime
-from assets.utils.debug import log_debug, log_connection
+from assets.utils.debug import log_debug, log_connection, get_distro
 from assets.ui.dialogs import (
         PasswordDialog,
         HiddenNetworkDialog,
@@ -632,6 +632,18 @@ class WifiWindow(Gtk.Window):
         ssid = model[path][4]  # Original SSID without indicator
         security = model[path][2]
         signal = model[path][3]
+
+        # Detect special WiFi (eduroam, WPA2-EAP, 802.1x, etc.)
+        # Should fix https://github.com/Lluciocc/connex/issues/4
+        if "EAP" in security or "8021x" in security or ssid.lower() == "eduroam":
+            self.set_status_animated(f"Connecting to {ssid} using system profile...",Gtk.MessageType.INFO, show_spinner=True)
+            def eap_connect():
+                code, out, err = self.run_cmd(f"nmcli connection up '{ssid}'")
+                GLib.idle_add(self.on_connect_done, code, out, err, ssid, "0")
+
+            threading.Thread(target=eap_connect, daemon=True).start()
+            return
+
         
         if ssid == "<Hidden Network>":
             self.connect_hidden_network()
@@ -824,7 +836,10 @@ class WifiWindow(Gtk.Window):
     def show_qr_code(self, ssid, security):
         password = ""
         if not QR_AVAILABLE:
-            self.show_error("QR code generation requires: pip install qrcode[pil] pillow")
+            if get_distro() == "arch":
+                self.show_error("QR code generation requires: pacman -S python-qrcode python-pillow")
+            else:
+                self.show_error("QR code generation requires: pip install qrcode[pil] pillow")
             return
         
         if security != "Open":
