@@ -46,7 +46,7 @@ install:
 	install -Dm644 LICENSE "$(DESTDIR)$(LICENSEDIR)/LICENSE"
 	install -Dm644 README.md "$(DESTDIR)$(DOCDIR)/README.md"
 
-	@echo "✅ Installation complete!"
+	@echo "✓ Installation complete!"
 	@echo "Run 'connex' to start the application."
 
 uninstall:
@@ -58,13 +58,13 @@ uninstall:
 	rm -f "$(DESTDIR)$(AUTOSTARTDIR)/connex-tray.desktop"
 	rm -rf "$(DESTDIR)$(LICENSEDIR)"
 	rm -rf "$(DESTDIR)$(DOCDIR)"
-	@echo "✅ Uninstallation complete!"
+	@echo "✓ Uninstallation complete!"
 
 clean:
 	@echo "Cleaning build artifacts..."
 	rm -rf pkg/ src/ *.tar.gz *.tar.xz *.pkg.tar.zst
 	rm -rf __pycache__ *.pyc
-	@echo "✅ Clean complete!"
+	@echo "✓ Clean complete!"
 
 test:
 	@echo "Running connex in test mode..."
@@ -72,26 +72,26 @@ test:
 
 checkdeps:
 	@echo "Checking dependencies..."
-	@command -v python3 >/dev/null 2>&1 || { echo "❌ python3 not found"; exit 1; }
-	@python3 -c "import gi" 2>/dev/null || { echo "❌ python-gobject not found"; exit 1; }
-	@command -v nmcli >/dev/null 2>&1 || { echo "❌ networkmanager not found"; exit 1; }
-	@echo "✅ All required dependencies found!"
+	@command -v python3 >/dev/null 2>&1 || { echo "✗ python3 not found"; exit 1; }
+	@python3 -c "import gi" 2>/dev/null || { echo "✗ python-gobject not found"; exit 1; }
+	@command -v nmcli >/dev/null 2>&1 || { echo "✗ networkmanager not found"; exit 1; }
+	@echo "✓ All required dependencies found!"
 
 build: checkdeps
 	@echo "Testing PKGBUILD build..."
 	makepkg -sf
-	@echo "✅ Build complete! Test with: sudo pacman -U connex-*.pkg.tar.zst"
+	@echo "✓ Build complete! Test with: sudo pacman -U connex-*.pkg.tar.zst"
 
 aur-test:
 	@echo "Testing AUR PKGBUILD..."
-	@if [ ! -f PKGBUILD ]; then echo "❌ PKGBUILD not found"; exit 1; fi
+	@if [ ! -f PKGBUILD ]; then echo "✗ PKGBUILD not found"; exit 1; fi
 	makepkg -sf --check
-	@echo "✅ AUR test complete!"
+	@echo "✓ AUR test complete!"
 
 aur-gen:
 	@echo "Generating .SRCINFO for AUR..."
 	makepkg --printsrcinfo > .SRCINFO
-	@echo "✅ .SRCINFO generated!"
+	@echo "✓ .SRCINFO generated!"
 	@echo "Don't forget to commit and push to AUR:"
 	@echo "  git add PKGBUILD .SRCINFO"
 	@echo "  git commit -m 'Update to version X.X.X'"
@@ -100,12 +100,12 @@ aur-gen:
 release: aur-gen
 	@echo "Preparing release..."
 	@if [ -z "$(VERSION)" ]; then \
-		echo "❌ Please specify VERSION: make release VERSION=2.0.0"; \
+		echo "✗ Please specify VERSION: make release VERSION=2.0.0"; \
 		exit 1; \
 	fi
 	@echo "Creating release for version $(VERSION)..."
 	git tag -a "v$(VERSION)" -m "Release version $(VERSION)"
-	@echo "✅ Tag created! Push with: git push origin v$(VERSION)"
+	@echo "✓ Tag created! Push with: git push origin v$(VERSION)"
 
 dev-install:
 	@echo "Installing in development mode..."
