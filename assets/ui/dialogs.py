@@ -1871,7 +1871,7 @@ class AboutDialog(Gtk.Dialog):
         box.pack_start(name_label, False, False, 0)
         
         version_label = Gtk.Label()
-        version_label.set_markup("<span size='small'>Version 1.3.1</span>")
+        version_label.set_markup("<span size='small'>Version 1.4.0</span>")
         box.pack_start(version_label, False, False, 0)
         
         # Description

@@ -1,6 +1,6 @@
 # Maintainer: Lluciocc <llucio.cc00@gmail.com>
 pkgname=connex
-pkgver=1.3.0
+pkgver=1.4.0
 pkgrel=1
 pkgdesc="Modern Wi-Fi Manager for Hyprland/ArchLinux with GTK3 interface"
 arch=('any')
