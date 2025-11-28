@@ -12,7 +12,8 @@ from assets.ui.dialogs import (
         HiddenNetworkDialog,
         SpeedTestDialog,
         LogViewerDialog,
-        ProxyDialog
+        ProxyDialog,
+        VPNManagerDialog
     )
 
 
@@ -175,6 +176,12 @@ class SystemTrayApp:
         proxy_item.connect("activate", self.show_proxy_settings)
         menu.append(proxy_item)
 
+        vpn_item = Gtk.MenuItem(label="VPN Manager")
+        vpn_item.connect("activate", self.show_vpn_manager)
+        menu.append(vpn_item)
+
+        menu.append(Gtk.SeparatorMenuItem())
+
         settings_item = Gtk.MenuItem(label="Open Connex Window")
         settings_item.connect("activate", self.show_window)
         menu.append(settings_item)
@@ -232,6 +239,11 @@ class SystemTrayApp:
         dialog.run()
         dialog.destroy()
         return
+
+    def show_vpn_manager(self, *_):
+        dialog = VPNManagerDialog(None)
+        dialog.run()
+        dialog.destroy()
 
     def show_hidden_connect_dialog(self, widget):
         """Connect to hidden network"""

@@ -13,7 +13,9 @@ from assets.ui.dialogs import (
         LogViewerDialog,
         ProxyDialog,
         QRCodeDialog,
-        QR_AVAILABLE
+        QR_AVAILABLE, 
+        VPNManagerDialog,
+        AboutDialog
     )
 
 class WifiWindow(Gtk.Window):
@@ -81,6 +83,10 @@ class WifiWindow(Gtk.Window):
         proxy_item = Gtk.MenuItem(label="Proxy Settings")
         proxy_item.connect("activate", self.show_proxy_settings)
         menu.append(proxy_item)
+
+        vpn_item = Gtk.MenuItem(label="VPN Manager")
+        vpn_item.connect("activate", self.show_vpn_manager)
+        menu.append(vpn_item)
         
         menu.append(Gtk.SeparatorMenuItem())
         
@@ -394,6 +400,11 @@ class WifiWindow(Gtk.Window):
     def show_proxy_settings(self, *_):
         """Show proxy settings dialog"""        
         dialog = ProxyDialog(self)
+        dialog.run()
+        dialog.destroy()
+
+    def show_vpn_manager(self, *_):
+        dialog = VPNManagerDialog(self)
         dialog.run()
         dialog.destroy()
 
@@ -924,14 +935,7 @@ class WifiWindow(Gtk.Window):
     
     def show_about(self, *_):
         """Show about dialog"""
-        dialog = Gtk.AboutDialog(transient_for=self, modal=True)
-        dialog.set_logo_icon_name("network-wireless-symbolic")
-        dialog.set_program_name("connex")
-        dialog.set_version("1.1.1")
-        dialog.set_comments("Modern Wi-Fi Manager")
-        dialog.set_website("https://github.com/Lluciocc/connex")
-        dialog.set_license_type(Gtk.License.MIT_X11)
-        dialog.set_authors(["Lluciocc"])
+        dialog = AboutDialog(self)
         dialog.run()
         dialog.destroy()
     
