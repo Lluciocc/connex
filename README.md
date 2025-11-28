@@ -1,6 +1,6 @@
 # connex - Modern Wi-Fi Manager
 
-**Connex** is a modern Wi-Fi manager for **Hyprland** and **ArchLinux**, built with **GTK3** and **NetworkManager**.  
+**Connex** is a modern Wi-Fi manager **Linux**, built with **NetworkManager**.  
 It provides a clean interface, CLI mode, and smooth integration with Linux desktops.
 
 
@@ -122,4 +122,4 @@ If you like my work, please consider buying me a coffee :)
 </a>
 
 
-**Made with ❤️ for the ArchLinux and Hyprland communities**
+**Made with ❤️ for the Linux communities**
