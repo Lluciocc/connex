@@ -6,7 +6,7 @@ It provides a clean interface, CLI mode, and smooth integration with Linux deskt
 
 ## Features
 
-- Simple and modern GTK3 interface  
+- Simple and modern interface  
 - Connect, disconnect, and manage Wi-Fi networks  
 - Hidden network support  
 - Connection history  
