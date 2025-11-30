@@ -27,7 +27,7 @@ paru -S connex
 ### Manual installation
 If you don’t use an AUR helper, you can install using this one-line command (recommended):
 ```bash
-curl -sSL https://raw.githubusercontent.com/Lluciocc/connex/master/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/Lluciocc/connex/master/install.sh | bash -s -- --clone
 ```
 
 You can also install it manually by cloning the repository and running the installer:

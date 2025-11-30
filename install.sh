@@ -2,6 +2,30 @@
 
 set -e
 
+CLONE="no"
+
+
+CLONE="no"
+
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+    --clone)
+        CLONE="yes"
+        shift
+        ;;
+    -h)
+        echo "Usage: install.sh [--clone] [--no-clone]"
+        exit 0
+        ;;
+    *)
+        echo "Unknown argument: $1"
+        exit 1
+        ;;
+    esac
+done
+
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -19,6 +43,21 @@ if [ "$EUID" -eq 0 ]; then
     echo -e "${RED}✗ Please do not run this script as root${NC}"
     echo -e "${YELLOW}The script will ask for sudo when needed${NC}"
     exit 1
+fi
+
+# clone if the argument was given
+if [[ "$CLONE" == "yes" ]]; then
+    echo -e "${BLUE}Cloning into the repository...${NC}"
+    TMP_DIR=$(mktemp -d)
+    cd "$TMP_DIR"
+
+
+    curl -sSL https://github.com/Lluciocc/connex/archive/refs/heads/master.zip -o connex.zip
+    unzip -qq connex.zip
+    cd connex-master
+
+
+    echo -e "${GREEN}✓ Repository downloaded${NC}"
 fi
 
 # Found this from many install.sh file
