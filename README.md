@@ -17,8 +17,7 @@ It provides a clean interface, CLI mode, and smooth integration with Linux deskt
 
 ## Installation
 
-### Manual installation
-If you don’t use an AUR helper, you can install using this one-line command (recommended):
+You can install using this one-line command (recommended):
 ```bash
 curl -sSL https://raw.githubusercontent.com/Lluciocc/connex/master/install.sh | bash -s -- --clone
 ```
@@ -29,14 +28,6 @@ git clone https://github.com/lluciocc/connex.git
 cd connex
 chmod +x ./install.sh
 ./install.sh
-```
-
-### Build from source
-If you prefer to build the package yourselfs:
-```bash
-git clone https://github.com/lluciocc/connex.git
-cd connex
-makepkg -si
 ```
 
 ## Usage
