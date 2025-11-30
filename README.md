@@ -17,13 +17,6 @@ It provides a clean interface, CLI mode, and smooth integration with Linux deskt
 
 ## Installation
 
-### From AUR
-```bash
-yay -S connex
-# or
-paru -S connex
-```
-
 ### Manual installation
 If you don’t use an AUR helper, you can install using this one-line command (recommended):
 ```bash
