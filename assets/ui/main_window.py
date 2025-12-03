@@ -2,6 +2,7 @@ import gi
 import subprocess
 import threading
 import shlex
+import time
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GObject, GLib, Gdk, Notify, AppIndicator3
 from datetime import datetime
@@ -26,21 +27,17 @@ class WifiWindow(Gtk.Window):
 
         self.apply_theme()
         
-        # Header bar
         header = Gtk.HeaderBar()
         header.set_show_close_button(True)
         header.set_title("connex")
         self.set_titlebar(header)
 
-        # Header animation
         self.header_revealer = Gtk.Revealer()
         self.header_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_LEFT)
         self.header_revealer.set_transition_duration(300)
 
-        # Spinner
         self.header_spinner = Gtk.Spinner()
         
-        # Connection status in header
         self.header_status_box = Gtk.Box(spacing=6)
         self.header_status_icon = Gtk.Image.new_from_icon_name(
             "network-wireless-offline-symbolic", Gtk.IconSize.BUTTON
@@ -53,7 +50,6 @@ class WifiWindow(Gtk.Window):
         self.header_revealer.add(self.header_status_box)
         header.set_custom_title(self.header_revealer)
         
-        # Scan button in header
         self.scan_button = Gtk.Button()
         scan_icon = Gtk.Image.new_from_icon_name("view-refresh-symbolic", Gtk.IconSize.BUTTON)
         self.scan_button.set_image(scan_icon)
@@ -61,7 +57,6 @@ class WifiWindow(Gtk.Window):
         self.scan_button.connect("clicked", self.on_scan_clicked)
         header.pack_start(self.scan_button)
         
-        # Menu button
         menu_button = Gtk.MenuButton()
         menu_icon = Gtk.Image.new_from_icon_name("open-menu-symbolic", Gtk.IconSize.BUTTON)
         menu_button.set_image(menu_icon)
@@ -104,7 +99,6 @@ class WifiWindow(Gtk.Window):
         menu_button.set_popup(menu)
         header.pack_end(menu_button)
         
-        # Airplane mode toggle
         self.airplane_button = Gtk.ToggleButton()
         airplane_icon = Gtk.Image.new_from_icon_name("airplane-mode-symbolic", Gtk.IconSize.BUTTON)
         self.airplane_button.set_image(airplane_icon)
@@ -112,19 +106,16 @@ class WifiWindow(Gtk.Window):
         self.airplane_button.connect("toggled", self.on_airplane_toggled)
         header.pack_start(self.airplane_button)
         
-        # Update airplane button state
         self.update_airplane_state()
 
-        # Window rezize
         self.last_resize_time = datetime.now()
+        self.freeze_updates = False
         self.connect("configure-event", self.on_configure_event)
         self.connect("size-allocate", self.on_size_allocate)
         
-        # Main container
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         self.add(main_box)
         
-        # Status bar at top
         self.status_revealer = Gtk.Revealer()
         self.status_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
         self.status_revealer.set_transition_duration(250)
@@ -140,7 +131,6 @@ class WifiWindow(Gtk.Window):
         self.status_revealer.set_reveal_child(True)
         main_box.pack_start(self.status_revealer, False, False, 0)
         
-        # Search bar
         self.search_revealer = Gtk.Revealer()
         self.search_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
         self.search_revealer.set_transition_duration(200)
@@ -162,7 +152,6 @@ class WifiWindow(Gtk.Window):
 
         GLib.timeout_add(500, lambda: self.search_revealer.set_reveal_child(True))
         
-        # Networks list
         self.store = Gtk.ListStore(str, str, str, str, str, str)  # SSID, Signal, Security, Icon, Full info, Type
         self.filter = self.store.filter_new()
         self.filter.set_visible_func(self.filter_func)
@@ -172,7 +161,6 @@ class WifiWindow(Gtk.Window):
         tree.set_enable_search(False)
         tree.set_activate_on_single_click(False)
         
-        # Icon column
         icon_renderer = Gtk.CellRendererPixbuf()
         icon_column = Gtk.TreeViewColumn("", icon_renderer)
         icon_column.set_cell_data_func(icon_renderer, self.signal_icon_func)
@@ -180,7 +168,6 @@ class WifiWindow(Gtk.Window):
         icon_column.set_fixed_width(40)
         tree.append_column(icon_column)
         
-        # SSID column
         ssid_renderer = Gtk.CellRendererText()
         ssid_renderer.set_property("ellipsize", 3)
         ssid_column = Gtk.TreeViewColumn("Network Name", ssid_renderer, text=0)
@@ -188,7 +175,6 @@ class WifiWindow(Gtk.Window):
         ssid_column.set_sort_column_id(0)
         tree.append_column(ssid_column)
         
-        # Signal column
         signal_renderer = Gtk.CellRendererText()
         signal_column = Gtk.TreeViewColumn("Signal", signal_renderer, text=1)
         signal_column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
@@ -196,14 +182,12 @@ class WifiWindow(Gtk.Window):
         signal_column.set_sort_column_id(1)
         tree.append_column(signal_column)
         
-        # Security column
         sec_renderer = Gtk.CellRendererText()
         sec_column = Gtk.TreeViewColumn("Security", sec_renderer, text=2)
         sec_column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
         sec_column.set_fixed_width(120)
         tree.append_column(sec_column)
         
-        # Type column (WiFi/Bluetooth/etc)
         type_renderer = Gtk.CellRendererText()
         type_column = Gtk.TreeViewColumn("Type", type_renderer, text=5)
         type_column.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
@@ -227,18 +211,19 @@ class WifiWindow(Gtk.Window):
         self.current_connection = None
         self.current_ssid = None
         
-        # Auto-refresh timer (every 10 seconds)
         self.no_scan = no_scan
+        self.scan_in_progress = False
+        self.last_wifi_list = ""
+        self.last_wifi_time = 0
+
         if not self.no_scan:
             self.auto_refresh = True
             GLib.timeout_add_seconds(10, self.auto_scan)
         else:
             self.auto_refresh = False
                 
-        # Update header status periodically
         GLib.timeout_add_seconds(5, self.update_header_status)
         
-        # Initialize notifications
         Notify.init("connex")
         
         self.show_all()
@@ -248,10 +233,7 @@ class WifiWindow(Gtk.Window):
         GLib.idle_add(self.update_header_status)
     
     def apply_theme(self):
-        """Apply theme based on system settings"""
         settings = Gtk.Settings.get_default()
-        
-        # Try to detect system theme preference
         try:
             result = subprocess.run(
                 ["gsettings", "get", "org.gnome.desktop.interface", "color-scheme"],
@@ -262,11 +244,12 @@ class WifiWindow(Gtk.Window):
             else:
                 settings.set_property("gtk-application-prefer-dark-theme", False)
         except:
-            # Default to dark theme for Hyprland
             settings.set_property("gtk-application-prefer-dark-theme", True)
     
     def update_header_status(self):
-        """Update connection status in header (only when state changes)"""
+        if self.freeze_updates:
+            return self.auto_refresh
+
         code, out, err = self.run_cmd("nmcli -t -f GENERAL.STATE device show")
 
         connected = "connected" in out.lower()
@@ -304,29 +287,22 @@ class WifiWindow(Gtk.Window):
         GLib.timeout_add(150, update_and_reveal)
         return self.auto_refresh
 
-    
-
     def setup_keyboard_shortcuts(self):
-        """Setup keyboard shortcuts"""
         accel_group = Gtk.AccelGroup()
         self.add_accel_group(accel_group)
         
-        # Ctrl+R: Refresh
         key, mod = Gtk.accelerator_parse("<Control>R")
         accel_group.connect(key, mod, Gtk.AccelFlags.VISIBLE, 
                            lambda *_: self.on_scan_clicked())
         
-        # Ctrl+F: Focus search
         key, mod = Gtk.accelerator_parse("<Control>F")
         accel_group.connect(key, mod, Gtk.AccelFlags.VISIBLE, 
                            lambda *_: self.search_entry.grab_focus())
         
-        # Ctrl+H: Hidden network
         key, mod = Gtk.accelerator_parse("<Control>H")
         accel_group.connect(key, mod, Gtk.AccelFlags.VISIBLE, 
                            lambda *_: self.connect_hidden_network())
         
-        # Ctrl+Q: Quit
         key, mod = Gtk.accelerator_parse("<Control>Q")
         accel_group.connect(key, mod, Gtk.AccelFlags.VISIBLE, 
                            lambda *_: self.destroy())
@@ -334,14 +310,12 @@ class WifiWindow(Gtk.Window):
         log_debug("Keyboard shortcuts initialized")
     
     def update_airplane_state(self):
-        """Update airplane mode button state"""
         code, out, err = self.run_cmd("nmcli radio wifi")
         enabled = "enabled" in out.lower()
         self.airplane_button.set_active(not enabled)
         return True
     
     def on_airplane_toggled(self, button):
-        """Toggle airplane mode avec animations"""
         active = button.get_active()
         
         self.header_revealer.set_reveal_child(False)
@@ -392,13 +366,11 @@ class WifiWindow(Gtk.Window):
         GLib.timeout_add(150, apply_mode)
     
     def show_speedtest(self, *_):
-        """Show speed test dialog"""
         dialog = SpeedTestDialog(self)
         dialog.run()
         dialog.destroy()
 
     def show_proxy_settings(self, *_):
-        """Show proxy settings dialog"""        
         dialog = ProxyDialog(self)
         dialog.run()
         dialog.destroy()
@@ -409,7 +381,9 @@ class WifiWindow(Gtk.Window):
         dialog.destroy()
 
     def set_status_animated(self, message, message_type=Gtk.MessageType.INFO, show_spinner=False):
-        """Update status with animation"""
+        if self.freeze_updates:
+            return
+
         self.status_revealer.set_reveal_child(False)
         
         def update_and_show():
@@ -430,7 +404,6 @@ class WifiWindow(Gtk.Window):
             self.header_status_icon.show()
 
     def check_internet(self):
-        """Check if internet is accessible"""
         try:
             result = subprocess.run(
                 ["ping", "-c", "1", "-W", "2", "1.1.1.1"],
@@ -441,7 +414,6 @@ class WifiWindow(Gtk.Window):
             return False
     
     def signal_icon_func(self, column, cell, model, iter, data):
-        """Display signal strength icon"""
         signal_str = model.get_value(iter, 1)
         net_type = model.get_value(iter, 5)
         
@@ -464,7 +436,6 @@ class WifiWindow(Gtk.Window):
         cell.set_property("icon-name", icon)
     
     def filter_func(self, model, iter, data):
-        """Filter networks based on search"""
         search_text = self.search_entry.get_text().lower()
         if not search_text:
             return True
@@ -472,17 +443,14 @@ class WifiWindow(Gtk.Window):
         return search_text in ssid
     
     def on_search_changed(self, entry):
-        """Trigger filter refilter on search"""
         self.filter.refilter()
     
     def auto_scan(self):
-        """Auto-refresh networks periodically"""
         if self.auto_refresh and self.is_visible():
             self.scan_networks(silent=True)
         return self.auto_refresh
     
     def run_cmd(self, cmd):
-        """Execute shell command"""
         try:
             log_debug(f"Running: {cmd}")
             res = subprocess.run(shlex.split(cmd), capture_output=True, text=True, timeout=8)
@@ -496,7 +464,6 @@ class WifiWindow(Gtk.Window):
             return 1, "", str(e)
     
     def get_current_connection(self):
-        """Get currently connected network"""
         code, out, err = self.run_cmd("nmcli -t -f NAME,TYPE,DEVICE connection show --active")
         for line in out.splitlines():
             parts = line.split(':')
@@ -506,8 +473,14 @@ class WifiWindow(Gtk.Window):
         self.current_ssid = None
         return None
     
-    def scan_networks(self, silent=False):
-        """Scan for available networks"""
+    def scan_networks(self, silent=False, do_rescan=False):
+        if self.scan_in_progress:
+            return
+
+        now = time.time()
+        if self.last_wifi_list and now - self.last_wifi_time < 5:
+            self.update_network_list(0, self.last_wifi_list, "", silent)
+            return
 
         if not silent:
             self.set_status_animated("Scanning networks...", Gtk.MessageType.INFO, show_spinner=True)
@@ -515,21 +488,24 @@ class WifiWindow(Gtk.Window):
             self.scan_button.set_sensitive(False)
         
         def scan_thread():
-            # Trigger rescan
-            subprocess.run(["nmcli", "device", "wifi", "rescan"], 
-                         capture_output=True, timeout=5)
+            self.scan_in_progress = True
+            if do_rescan:
+                subprocess.run(["nmcli", "device", "wifi", "rescan"], capture_output=True, timeout=5)
             
             code, out, err = self.run_cmd("nmcli -t -f SSID,SIGNAL,SECURITY device wifi list")
+            self.last_wifi_list = out
+            self.last_wifi_time = time.time()
+            self.scan_in_progress = False
             GLib.idle_add(self.update_network_list, code, out, err, silent)
         
         threading.Thread(target=scan_thread, daemon=True).start()
     
     def update_network_list(self, code, out, err, silent):
-        """Update the network list (runs in main thread)"""
+        if self.freeze_updates:
+            return False
 
         if not self.is_visible() or not self.get_window().get_state() & Gdk.WindowState.FOCUSED:
             return False
-
 
         self.scan_button.set_sensitive(True)
         self.header_spinner.stop()
@@ -541,8 +517,6 @@ class WifiWindow(Gtk.Window):
                 self.set_status_animated(f"Scan failed: {err or 'nmcli error'}", Gtk.MessageType.ERROR)
             return False
         
-        self.tree.set_opacity(0.3)
-
         self.current_connection = self.get_current_connection()
         self.store.clear()
         
@@ -553,7 +527,6 @@ class WifiWindow(Gtk.Window):
             parts = line.split(':')
             ssid = parts[0] if parts[0] else "<Hidden Network>"
             
-            # Skip duplicates (same SSID)
             if ssid in seen_ssids:
                 continue
             seen_ssids.add(ssid)
@@ -561,7 +534,6 @@ class WifiWindow(Gtk.Window):
             signal = parts[1] if len(parts) > 1 else "0"
             sec = parts[2] if len(parts) > 2 else "Open"
             
-            # Format security
             if not sec or sec == "--":
                 sec_display = "Open"
             elif "WPA3" in sec:
@@ -573,23 +545,11 @@ class WifiWindow(Gtk.Window):
             else:
                 sec_display = sec
             
-            # Add connected indicator
             display_ssid = f"● {ssid}" if ssid == self.current_connection else ssid
             
             self.store.append([display_ssid, f"{signal}%", sec_display, signal, ssid, "WiFi"])
         
-        # Sort by signal strength
         self.store.set_sort_column_id(3, Gtk.SortType.DESCENDING)
-        
-        def fade_in(opacity=0.3):
-            if opacity < 1.0:
-                self.tree.set_opacity(opacity)
-                GLib.timeout_add(30, fade_in, opacity + 0.1)
-            else:
-                self.tree.set_opacity(1.0)
-            return False
-    
-        GLib.timeout_add(50, fade_in)
 
         count = len(self.store)
         if not silent:
@@ -601,27 +561,25 @@ class WifiWindow(Gtk.Window):
         return False
     
     def on_scan_clicked(self, *_):
-        """Manual scan button clicked"""
-        self.scan_networks()
+        self.scan_networks(do_rescan=True)
 
     def on_configure_event(self, widget, event):
-        """Pause auto-refresh when resizing"""
         self.auto_refresh = False
         self.last_resize_time = datetime.now()
+        self.freeze_updates = True
         return False
 
     def on_size_allocate(self, widget, allocation):
-        """Resume scanning a bit after resizing stops"""
         def reenable():
             if (datetime.now() - self.last_resize_time).total_seconds() > 1.5:
                 self.auto_refresh = not self.no_scan
+                self.freeze_updates = False
                 return False
             return True
         GLib.timeout_add(1500, reenable)
 
     
     def connect_hidden_network(self, *_):
-        """Connect to hidden network"""
         dialog = HiddenNetworkDialog(self)
         response = dialog.run()
         
@@ -638,14 +596,11 @@ class WifiWindow(Gtk.Window):
             dialog.destroy()
     
     def on_row_activated(self, tree, path, col):
-        """Network double-clicked - initiate connection"""
         model = tree.get_model()
-        ssid = model[path][4]  # Original SSID without indicator
+        ssid = model[path][4]
         security = model[path][2]
         signal = model[path][3]
 
-        # Detect special WiFi (eduroam, WPA2-EAP, 802.1x, etc.)
-        # Should fix https://github.com/Lluciocc/connex/issues/4
         if "EAP" in security or "8021x" in security or ssid.lower() == "eduroam":
             self.set_status_animated(f"Connecting to {ssid} using system profile...",Gtk.MessageType.INFO, show_spinner=True)
             def eap_connect():
@@ -660,7 +615,6 @@ class WifiWindow(Gtk.Window):
             self.connect_hidden_network()
             return
         
-        # Check if already connected
         if ssid == self.current_connection:
             response = self.show_question(
                 f"Already connected to {ssid}",
@@ -673,11 +627,9 @@ class WifiWindow(Gtk.Window):
         self.selected_ssid = ssid
         self.selected_security = security
         
-        # If open network, connect directly
         if security == "Open":
             self.connect_to_network(ssid, "", signal=signal)
         else:
-            # Show password dialog
             dialog = PasswordDialog(self, ssid, security)
             response = dialog.run()
             
@@ -692,11 +644,9 @@ class WifiWindow(Gtk.Window):
                 dialog.destroy()
     
     def connect_to_network(self, ssid, password, hidden=False, signal="0"):
-        """Connect to a network"""
         self.set_status_animated(f"Connecting to {ssid}...", Gtk.MessageType.INFO, show_spinner=True)
         
         def connect_thread():
-            # First delete forget the connection for this network
             self.forget_network(ssid, True)
 
             args = ["nmcli", "device", "wifi", "connect", ssid]
@@ -715,7 +665,6 @@ class WifiWindow(Gtk.Window):
         threading.Thread(target=connect_thread, daemon=True).start()
     
     def on_connect_done(self, code, out, err, ssid, signal):
-        """Connection attempt completed"""
         if code == 0:
             self.set_status_animated(f"✓ Connected to {ssid}", Gtk.MessageType.INFO)
             
@@ -723,20 +672,6 @@ class WifiWindow(Gtk.Window):
                 "network-wireless-signal-excellent-symbolic", Gtk.IconSize.BUTTON
             )
 
-            def pulse(scale=1.0, direction=1):
-                if scale > 1.2:
-                    direction = -1
-                elif scale < 1.0:
-                    return False
-                
-                self.header_status_box.set_scale_factor(int(scale * 100) / 100)
-                GLib.timeout_add(20, pulse, scale + 0.02 * direction, direction)
-                return False
-            
-            # To fix
-            #pulse()
-
-            # notification
             notification = Notify.Notification.new(
                 "Connected",
                 f"Successfully connected to {ssid}",
@@ -744,10 +679,8 @@ class WifiWindow(Gtk.Window):
             )
             notification.show()
             
-            # Log success
             log_connection(ssid, signal, True)
             
-            # Refresh to show connected status
             GLib.timeout_add(1000, lambda: self.scan_networks(silent=True))
             GLib.timeout_add(1000, self.update_header_status)
         else:
@@ -771,8 +704,6 @@ class WifiWindow(Gtk.Window):
             
             shake()
 
-
-            # Send notification
             notification = Notify.Notification.new(
                 "Connection Failed",
                 f"Could not connect to {ssid}: {error_msg}",
@@ -780,13 +711,11 @@ class WifiWindow(Gtk.Window):
             )
             notification.show()
             
-            # Log failure
             log_connection(ssid, signal, False, error_msg)
         
         return False
     
     def disconnect_network(self, ssid):
-        """Disconnect from network"""
         code, out, err = self.run_cmd(f"nmcli connection down '{ssid}'")
         if code == 0:
             self.status_label.set_text(f"Disconnected from {ssid}")
@@ -805,8 +734,7 @@ class WifiWindow(Gtk.Window):
             self.show_error(f"Failed to disconnect: {err}")
     
     def on_tree_button_press(self, widget, event):
-        """Handle right-click context menu"""
-        if event.button == 3:  # Right click
+        if event.button == 3:
             path = widget.get_path_at_pos(int(event.x), int(event.y))
             if path:
                 widget.set_cursor(path[0])
@@ -815,7 +743,6 @@ class WifiWindow(Gtk.Window):
         return False
     
     def show_context_menu(self, widget, event, path):
-        """Show context menu for network"""
         model = widget.get_model()
         ssid = model[path][4]
         
@@ -854,7 +781,6 @@ class WifiWindow(Gtk.Window):
             return
         
         if security != "Open":
-            # Try to get password from saved connection
             code, out, err = self.run_cmd(f"nmcli -s -g 802-11-wireless-security.psk connection show '{ssid}'")
             if code == 0 and out:
                 password = out.strip()
@@ -868,14 +794,11 @@ class WifiWindow(Gtk.Window):
                     dialog.destroy()
                     return
         
-        # Show the dialog
         qr_dialog = QRCodeDialog(self, ssid, password, security)
         qr_dialog.run()
         qr_dialog.destroy()
     
     def forget_network(self, ssid, quick=False):
-        """Remove saved network connection"""
-        # quick forget logic
         if quick:
             code, out, err = self.run_cmd(f"nmcli connection delete '{ssid}'")
             if code == 0:
@@ -898,7 +821,6 @@ class WifiWindow(Gtk.Window):
                     self.status_bar.set_message_type(Gtk.MessageType.WARNING)
     
     def show_connection_info(self, *_):
-        """Show current connection details"""
         code, out, err = self.run_cmd("nmcli -t -f GENERAL,IP4 device show")
         
         if code == 0 and out:
@@ -910,7 +832,6 @@ class WifiWindow(Gtk.Window):
                 text="Network Information"
             )
             
-            # Parse and format output
             info_lines = []
             for line in out.splitlines()[:20]:
                 if any(x in line for x in ["IP4.ADDRESS", "IP4.GATEWAY", "IP4.DNS", 
@@ -928,19 +849,16 @@ class WifiWindow(Gtk.Window):
             self.show_error("Could not retrieve connection info")
     
     def show_history(self, *_):
-        """Show connection history"""
         dialog = LogViewerDialog(self)
         dialog.run()
         dialog.destroy()
     
     def show_about(self, *_):
-        """Show about dialog"""
         dialog = AboutDialog(self)
         dialog.run()
         dialog.destroy()
     
     def show_error(self, message):
-        """Show error dialog"""
         dialog = Gtk.MessageDialog(
             parent=self,
             modal=True,
@@ -953,7 +871,6 @@ class WifiWindow(Gtk.Window):
         dialog.destroy()
     
     def show_question(self, primary, secondary):
-        """Show yes/no question dialog"""
         dialog = Gtk.MessageDialog(
             parent=self,
             modal=True,
@@ -967,6 +884,5 @@ class WifiWindow(Gtk.Window):
         return response
     
     def do_destroy(self):
-        """Clean up on window close"""
         self.auto_refresh = False
         Gtk.Window.do_destroy(self)

@@ -30,6 +30,27 @@ chmod +x ./install.sh
 ./install.sh
 ```
 
+## Compatibility
+
+| Distribution        | Status |
+| ------------------- | :----: |
+| Arch Linux          |   ✅   |
+| Linux Mint          |   ✅   |
+| Ubuntu              |   ❓   |
+| Debian              |   ❓   |
+| Fedora              |   ❓   |
+| openSUSE            |   ❓   |
+| Manjaro             |   ❓   |
+| Pop!_OS             |   ❓   |
+| Elementary OS       |   ❓   |
+| Zorin OS            |   ❓   |
+| Kali Linux          |   ❓   |
+| EndeavourOS         |   ❓   |
+| Rocky Linux         |   ❓   |
+
+> [!NOTE]
+> Everything marked with ❓ has not been tested yet, your help would be greatly appreciated!
+
 ## Usage
 
 ### GUI Mode

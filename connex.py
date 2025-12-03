@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
-connex - Modern Wi-Fi Manager for Hyprland/ArchLinux
-Enhanced version with advanced features
+connex - Wi-Fi Manager for Linux
 Dependencies: python-gobject gtk3 networkmanager libappindicator-gtk3
 """
 import gi
