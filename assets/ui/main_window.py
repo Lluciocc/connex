@@ -7,17 +7,15 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GObject, GLib, Gdk, Notify, AppIndicator3
 from datetime import datetime
 from assets.utils.debug import log_debug, log_connection, get_distro
-from assets.ui.dialogs import (
-        PasswordDialog,
-        HiddenNetworkDialog,
+from assets.ui.other_ui import (
         SpeedTestDialog,
-        LogViewerDialog,
-        ProxyDialog,
         QRCodeDialog,
         QR_AVAILABLE, 
-        VPNManagerDialog,
         AboutDialog
     )
+from assets.ui.proxy_ui import ProxyDialog
+from assets.ui.vpn_ui import VPNManagerDialog
+from assets.ui.wifi_ui import LogViewerDialog, HiddenNetworkDialog, PasswordDialog
 
 class WifiWindow(Gtk.Window):
     def __init__(self, no_scan=False):
