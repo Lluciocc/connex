@@ -15,6 +15,9 @@ try:
 except ImportError:
     QR_AVAILABLE = False
 
+VERSION = "1.4.1"
+
+
 class SpeedTestDialog(Gtk.Dialog):
     def __init__(self, parent):
         super().__init__(title="Speed Test", parent=parent, modal=True)
@@ -405,7 +408,7 @@ class AboutDialog(Gtk.Dialog):
         box.pack_start(name_label, False, False, 0)
         
         version_label = Gtk.Label()
-        version_label.set_markup("<span size='small'>Version 1.4.0</span>")
+        version_label.set_markup(f"<span size='small'>Version {VERSION}</span>")
         box.pack_start(version_label, False, False, 0)
         
         # Description
