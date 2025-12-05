@@ -36,7 +36,7 @@ chmod +x ./install.sh
 | ------------------- | :----: |
 | Arch Linux          |   ✅   |
 | Linux Mint          |   ✅   |
-| Ubuntu              |   ❓   |
+| Ubuntu              |   ✅   |
 | Debian              |   ❓   |
 | Fedora              |   ❓   |
 | openSUSE            |   ❓   |
