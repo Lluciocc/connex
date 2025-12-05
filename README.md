@@ -1,7 +1,6 @@
 # connex - Modern Wi-Fi Manager
 
-**Connex** is a modern Wi-Fi manager **Linux**, built with **NetworkManager**.  
-It provides a clean interface, CLI mode, and smooth integration with Linux desktops.
+**Connex** is a modern and intuitive **Wi-Fi manager** for **Linux**, powered by NetworkManager, offering a clean interface, a full **CLI mode**, seamless **desktop integration**, **VPN and proxy management**, hidden network support, **QR-code pairing**, and even a **built-in speedtest** for a complete networking experience.
 
 
 ## Features
@@ -14,6 +13,7 @@ It provides a clean interface, CLI mode, and smooth integration with Linux deskt
 - Command-line mode 
 - QR code connection 
 - Proxy system (WIP)
+- VPN Management
 
 ## Installation
 

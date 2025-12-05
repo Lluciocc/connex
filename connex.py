@@ -234,6 +234,10 @@ def main():
     
     return 0
 
-
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except KeyboardInterrupt:
+        print("Interrupted by user. Exiting...")
+    except Exception as e:
+        print(f"[Connex] Unexpected error: {e}")
