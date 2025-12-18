@@ -24,7 +24,6 @@ from gi.repository import Gtk, GObject, GLib, Gdk, Notify, AppIndicator3
 
 from assets.core.speedtest import SpeedTest
 from assets.ui.main_window import WifiWindow
-from assets.ui.dialogs import PasswordDialog, HiddenNetworkDialog, LogViewerDialog, SpeedTestDialog
 from assets.tray.system_tray import SystemTrayApp 
 from assets.utils.debug import ensure_config_dir, get_os
 
