@@ -260,7 +260,12 @@ case "$DISTRO" in
         ;;
 esac
 
-echo -e "${BLUE}[2/4] Installing connex...${NC}"
+if command -v connex &> /dev/null; then
+    echo -e "${YELLOW}⚠ Existing connex installation detected${NC}"
+    echo -e "${BLUE}Updating connex (files will be replaced)...${NC}"
+else
+    echo -e "${BLUE}Installing connex for the first time...${NC}"
+fi
 
 # Create directories if they don't exist
 sudo mkdir -p /usr/bin
