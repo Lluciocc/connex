@@ -29,7 +29,6 @@ from assets.utils.debug import ensure_config_dir, get_os
 
 
 def cli_mode(args):
-    """CLI mode for scripting"""
     if args.cli_action == "list":
         code, out, err = run_cmd_sync("nmcli -t -f SSID,SIGNAL,SECURITY device wifi list")
         if code == 0:
@@ -98,7 +97,6 @@ def cli_mode(args):
 
 
 def run_cmd_sync(cmd):
-    """Synchronous command execution for CLI"""
     try:
         res = subprocess.run(shlex.split(cmd), capture_output=True, text=True, timeout=10)
         return res.returncode, res.stdout.strip(), res.stderr.strip()
@@ -107,8 +105,6 @@ def run_cmd_sync(cmd):
 
 
 def main():
-    global DEBUG_MODE
-
     if not get_os():
         print("THIS PROGRAM IS NOT MADE FOR YOUR OS")
         return
@@ -139,7 +135,7 @@ def main():
 
     args = parser.parse_args()
     
-    DEBUG_MODE = args.debug
+    DEBUG_MODE_ARGS = args.debug
     
     ensure_config_dir()
     
@@ -147,7 +143,6 @@ def main():
     if args.cli_action:
         return cli_mode(args)
     
-    # Set up CSS for better styling
     css_provider = Gtk.CssProvider()
     css_provider.load_from_data(b"""
         .info-bar {
@@ -216,7 +211,6 @@ def main():
             print(msg)
             return 0 if success else 1
     
-    # Tray mode
     if args.tray or args.tray_only:
         tray = SystemTrayApp()
         if not args.tray_only:
@@ -226,7 +220,6 @@ def main():
             Notify.Notification.new("connex", "Running in tray mode", "network-wireless").show()
         Gtk.main()
     else:
-        # Normal window mode
         win = WifiWindow(no_scan=args.no_scan)
         win.connect("destroy", Gtk.main_quit)
         Gtk.main()

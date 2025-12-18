@@ -12,8 +12,8 @@
 - Built-in speedtest  
 - Command-line mode 
 - QR code connection 
-- Proxy system (WIP)
-- VPN Management
+- Proxy system 
+- VPN Management (WIP)
 
 ## Installation
 

@@ -346,6 +346,7 @@ class QRCodeDialog(Gtk.Dialog):
                     error_dialog.destroy()
             
             file_dialog.destroy()
+
 class AboutDialog(Gtk.Dialog):
     def __init__(self, parent):
         super().__init__(title="About", parent=parent, modal=True)

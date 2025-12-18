@@ -2,10 +2,12 @@ from pathlib import Path
 from datetime import datetime
 import platform
 
+from assets.utils.config import Configuration
 # Configuration
 CONFIG_DIR = Path.home() / ".config" / "connex"
 HISTORY_FILE = CONFIG_DIR / "history.log"
-DEBUG_MODE = False
+config = Configuration().get_config()
+DEBUG_MODE = config.getboolean('GENERAL', 'debug', fallback=False) if config else False
 
 def log_debug(msg):
     if DEBUG_MODE:
