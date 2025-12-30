@@ -1,3 +1,6 @@
+# 🔴 This is the DEV branch  🔴
+> [!NOTE]
+> This branch is not as stable as master is. It contain things/ features that are WIP and may be unstable
 # connex - Modern Wi-Fi Manager
 
 **Connex** is a modern and intuitive **Wi-Fi manager** for **Linux**, powered by NetworkManager, offering a clean interface, a full **CLI mode**, seamless **desktop integration**, **VPN and proxy management**, hidden network support, **QR-code pairing**, and even a **built-in speedtest** for a complete networking experience.
