@@ -4,10 +4,6 @@ set -e
 
 CLONE="no"
 
-
-CLONE="no"
-
-
 while [[ $# -gt 0 ]]; do
     case "$1" in
     --clone)
@@ -15,7 +11,7 @@ while [[ $# -gt 0 ]]; do
         shift
         ;;
     -h)
-        echo "Usage: install.sh [--clone] [--no-clone]"
+        echo "Usage: install.sh [--clone]"
         exit 0
         ;;
     *)
@@ -25,44 +21,47 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-echo -e "${BLUE}"
-echo "╔═══════════════════════════════════════╗"
-echo "║     connex Installation Script        ║"
-echo "╚═══════════════════════════════════════╝"
-echo -e "${NC}"
+echo -e "${CYAN}Installing connex...${NC}"
+echo ""
 
-# Check if running as root
 if [ "$EUID" -eq 0 ]; then 
-    echo -e "${RED}✗ Please do not run this script as root${NC}"
+    echo -e "${RED}Error: Do not run this script as root${NC}"
     echo -e "${YELLOW}The script will ask for sudo when needed${NC}"
     exit 1
 fi
 
-# clone if the argument was given
-if [[ "$CLONE" == "yes" ]]; then
-    echo -e "${BLUE}Cloning into the repository...${NC}"
+UPDATING=false
+if command -v connex &> /dev/null; then
+    UPDATING=true
+    echo -e "${YELLOW}Existing installation detected - updating${NC}"
+    echo ""
+fi
+
+if [[ "$CLONE" == "yes" ]] || [[ "$UPDATING" == true ]]; then
+    if [[ "$UPDATING" == true ]]; then
+        echo -e "${CYAN}Downloading latest version from GitHub...${NC}"
+    else
+        echo -e "${CYAN}Cloning repository from GitHub...${NC}"
+    fi
+    
     TMP_DIR=$(mktemp -d)
     cd "$TMP_DIR"
-
-
+    
     curl -sSL https://github.com/Lluciocc/connex/archive/refs/heads/master.zip -o connex.zip
     unzip -qq connex.zip
     cd connex-master
-
-
-    echo -e "${GREEN}✓ Repository downloaded${NC}"
+    
+    echo -e "${CYAN}Source code retrieved${NC}"
+    echo ""
 fi
 
-# Found this from many install.sh file
-
-# Detect distribution
 detect_distro() {
     if [ -f /etc/os-release ]; then
         . /etc/os-release
@@ -83,7 +82,7 @@ detect_distro() {
 
 detect_distro
 
-echo -e "${BLUE}Detected distribution: ${GREEN}$DISTRO${NC}"
+echo -e "${CYAN}Detected distribution: ${YELLOW}$DISTRO${NC}"
 echo ""
 
 install_arch() {
@@ -106,10 +105,10 @@ install_arch() {
     
     if [ ${#MISSING_DEPS[@]} -ne 0 ]; then
         echo -e "${YELLOW}Missing dependencies: ${MISSING_DEPS[*]}${NC}"
-        echo -e "${BLUE}Installing missing dependencies...${NC}"
+        echo -e "${CYAN}Installing dependencies...${NC}"
         sudo pacman -S --needed "${MISSING_DEPS[@]}"
     else
-        echo -e "${GREEN}✓ All dependencies already installed${NC}"
+        echo -e "${CYAN}All dependencies already installed${NC}"
     fi
 }
 
@@ -126,10 +125,10 @@ install_debian() {
         "python3-pil"
     )
     
-    echo -e "${BLUE}Updating package list...${NC}"
+    echo -e "${CYAN}Updating package list...${NC}"
     sudo apt-get update
     
-    echo -e "${BLUE}Installing dependencies...${NC}"
+    echo -e "${CYAN}Installing dependencies...${NC}"
     sudo apt-get install -y "${packages[@]}"
 }
 
@@ -145,7 +144,7 @@ install_fedora() {
         "python3-pillow"
     )
     
-    echo -e "${BLUE}Installing dependencies...${NC}"
+    echo -e "${CYAN}Installing dependencies...${NC}"
     sudo dnf install -y "${packages[@]}"
 }
 
@@ -162,7 +161,7 @@ install_opensuse() {
         "python3-Pillow"
     )
     
-    echo -e "${BLUE}Installing dependencies...${NC}"
+    echo -e "${CYAN}Installing dependencies...${NC}"
     sudo zypper install -y "${packages[@]}"
 }
 
@@ -178,7 +177,7 @@ install_void() {
         "python3-Pillow"
     )
     
-    echo -e "${BLUE}Installing dependencies...${NC}"
+    echo -e "${CYAN}Installing dependencies...${NC}"
     sudo xbps-install -Sy "${packages[@]}"
 }
 
@@ -194,7 +193,7 @@ install_alpine() {
         "py3-pillow"
     )
     
-    echo -e "${BLUE}Installing dependencies...${NC}"
+    echo -e "${CYAN}Installing dependencies...${NC}"
     sudo apk add "${packages[@]}"
 }
 
@@ -210,15 +209,13 @@ install_gentoo() {
         "dev-python/pillow"
     )
     
-    echo -e "${BLUE}Installing dependencies...${NC}"
+    echo -e "${CYAN}Installing dependencies...${NC}"
     echo -e "${YELLOW}Note: This may take a while on Gentoo${NC}"
     sudo emerge --ask --verbose "${packages[@]}"
 }
 
-echo -e "${BLUE}[1/4] Installing dependencies...${NC}"
+echo -e "${BLUE}Step 1/4: Installing system dependencies${NC}"
 
-# Inspired from this image
-# https://www.reddit.com/r/linux/comments/1czajn0/linux_distro_family_chart_with_distros_based/
 case "$DISTRO" in
     arch|manjaro|endeavouros|garuda)
         install_arch
@@ -242,8 +239,8 @@ case "$DISTRO" in
         install_gentoo
         ;;
     *)
-        echo -e "${RED}✗ Unsupported distribution: $DISTRO${NC}"
-        echo -e "${YELLOW}Please install dependencies manually:${NC}"
+        echo -e "${RED}Unsupported distribution: $DISTRO${NC}"
+        echo -e "${YELLOW}Please install the following dependencies manually:${NC}"
         echo "  - Python 3"
         echo "  - PyGObject (python-gobject)"
         echo "  - GTK 3"
@@ -252,7 +249,7 @@ case "$DISTRO" in
         echo "  - libnotify"
         echo "  - python-qrcode"
         echo ""
-        read -p "Continue with installation anyway? (y/N) " -n 1 -r
+        read -p "Continue anyway? (y/N) " -n 1 -r
         echo
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
             exit 1
@@ -260,93 +257,93 @@ case "$DISTRO" in
         ;;
 esac
 
-if command -v connex &> /dev/null; then
-    echo -e "${YELLOW}⚠ Existing connex installation detected${NC}"
-    echo -e "${BLUE}Updating connex (files will be replaced)...${NC}"
-else
-    echo -e "${BLUE}Installing connex for the first time...${NC}"
-fi
+echo ""
+echo -e "${BLUE}Step 2/4: Installing files${NC}"
 
-# Create directories if they don't exist
-sudo mkdir -p /usr/bin
-sudo mkdir -p /usr/lib/connex/assets/{core,tray,utils,ui}
-sudo mkdir -p /usr/share/applications
-sudo mkdir -p /usr/share/icons/hicolor/scalable/apps
+sudo mkdir -p /usr/local/bin
+sudo mkdir -p /usr/local/lib/connex/assets/{core,tray,utils,ui}
+sudo mkdir -p /usr/local/share/applications
+sudo mkdir -p /usr/local/share/icons/hicolor/scalable/apps
+sudo mkdir -p /usr/local/share/licenses/connex
+sudo mkdir -p /usr/local/share/doc/connex
 sudo mkdir -p /etc/xdg/autostart
-sudo mkdir -p /usr/share/licenses/connex
-sudo mkdir -p /usr/share/doc/connex
 
-# Install main script
-sudo install -Dm755 connex.py /usr/bin/connex
+echo -e "${CYAN}Installing main script...${NC}"
+sudo install -Dm755 connex.py /usr/local/bin/connex
 
-# Copy assets
 if [ -d "assets" ]; then
-    sudo cp -a assets /usr/lib/connex/
+    echo -e "${CYAN}Copying assets...${NC}"
+    sudo cp -a assets /usr/local/lib/connex/
 else
-    echo -e "${YELLOW}⚠ Warning: assets directory not found${NC}"
+    echo -e "${YELLOW}Warning: assets directory not found${NC}"
 fi
 
-# Desktop entry and autostart
 if [ -f "connex.desktop" ]; then
-    sudo install -Dm644 connex.desktop /usr/share/applications/connex.desktop
+    echo -e "${CYAN}Installing application menu entry...${NC}"
+    sudo install -Dm644 connex.desktop /usr/local/share/applications/connex.desktop
 fi
 
 if [ -f "connex-tray.desktop" ]; then
+    echo -e "${CYAN}Configuring autostart...${NC}"
     sudo install -Dm644 connex-tray.desktop /etc/xdg/autostart/connex-tray.desktop
 fi
 
-# Icon
 if [ -f "connex.svg" ]; then
-    sudo install -Dm644 connex.svg /usr/share/icons/hicolor/scalable/apps/connex.svg
+    echo -e "${CYAN}Installing icon...${NC}"
+    sudo install -Dm644 connex.svg /usr/local/share/icons/hicolor/scalable/apps/connex.svg
 fi
 
-# License & docs
 if [ -f "LICENSE" ]; then
-    sudo install -Dm644 LICENSE /usr/share/licenses/connex/LICENSE
+    sudo install -Dm644 LICENSE /usr/local/share/licenses/connex/LICENSE
 fi
 
 if [ -f "README.md" ]; then
-    sudo install -Dm644 README.md /usr/share/doc/connex/README.md
+    sudo install -Dm644 README.md /usr/local/share/doc/connex/README.md
 fi
 
-echo -e "${GREEN}✓ Files installed${NC}"
+echo -e "${CYAN}Files installed in /usr/local${NC}"
+echo ""
 
-echo -e "${BLUE}[3/4] Updating icon cache...${NC}"
+echo -e "${BLUE}Step 3/4: Updating icon cache${NC}"
 if command -v gtk-update-icon-cache &> /dev/null; then
-    sudo gtk-update-icon-cache -f -t /usr/share/icons/hicolor/ 2>/dev/null || true
-    echo -e "${GREEN}✓ Icon cache updated${NC}"
+    sudo gtk-update-icon-cache -f -t /usr/local/share/icons/hicolor/ 2>/dev/null || true
+    echo -e "${CYAN}Icon cache updated${NC}"
 else
-    echo -e "${YELLOW}⚠ gtk-update-icon-cache not found, skipping${NC}"
+    echo -e "${YELLOW}gtk-update-icon-cache not found, skipping${NC}"
 fi
+echo ""
 
-echo -e "${BLUE}[4/4] Checking NetworkManager status...${NC}"
+echo -e "${BLUE}Step 4/4: Checking NetworkManager${NC}"
 if systemctl is-active --quiet NetworkManager 2>/dev/null; then
-    echo -e "${GREEN}✓ NetworkManager is running${NC}"
+    echo -e "${CYAN}NetworkManager is active and running${NC}"
 elif command -v systemctl &> /dev/null; then
-    echo -e "${YELLOW}⚠ NetworkManager is not running${NC}"
+    echo -e "${YELLOW}NetworkManager is not running${NC}"
     read -p "Start NetworkManager now? (Y/n) " -n 1 -r
     echo
     if [[ ! $REPLY =~ ^[Nn]$ ]]; then
         sudo systemctl start NetworkManager
         sudo systemctl enable NetworkManager
-        echo -e "${GREEN}✓ NetworkManager started and enabled${NC}"
+        echo -e "${CYAN}NetworkManager started and enabled${NC}"
     fi
 else
-    echo -e "${YELLOW}⚠ systemctl not available, please start NetworkManager manually${NC}"
+    echo -e "${YELLOW}systemctl not available, start NetworkManager manually${NC}"
 fi
 
 echo ""
-echo -e "${GREEN}╔═══════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║      ✓ Installation Complete!         ║${NC}"
-echo -e "${GREEN}╚═══════════════════════════════════════╝${NC}"
+echo -e "${GREEN}Installation completed successfully!${NC}"
 echo ""
-echo -e "${BLUE}Usage:${NC}"
-echo -e "  ${YELLOW}connex${NC}              - Launch GUI"
-echo -e "  ${YELLOW}connex --tray${NC}       - Launch in system tray"
-echo -e "  ${YELLOW}connex --cli list${NC}   - List networks (CLI mode)"
-echo -e "  ${YELLOW}connex -h${NC}           - Show help"
+echo -e "${CYAN}How to use connex:${NC}"
+echo -e "  ${YELLOW}connex${NC}              Launch GUI"
+echo -e "  ${YELLOW}connex --tray${NC}       Launch in system tray"
+echo -e "  ${YELLOW}connex --cli list${NC}   List networks in CLI mode"
+echo -e "  ${YELLOW}connex -h${NC}           Show help"
 echo ""
-echo -e "${BLUE}Documentation:${NC} /usr/share/doc/connex/README.md"
-echo -e "${BLUE}Config directory:${NC} ~/.config/connex/"
+echo -e "${CYAN}Documentation:${NC} /usr/local/share/doc/connex/README.md"
+echo -e "${CYAN}Configuration directory:${NC} ~/.config/connex/"
 echo ""
-echo -e "Run ${YELLOW}connex${NC} to get started!"
+
+if [[ "$UPDATING" == true ]]; then
+    echo -e "${GREEN}Update complete. Restart connex to use the new version.${NC}"
+else
+    echo -e "Run ${YELLOW}connex${NC} to get started!"
+fi
