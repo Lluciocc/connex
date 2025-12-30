@@ -15,6 +15,7 @@ from assets.ui.other_ui import (
     )
 from assets.ui.proxy_ui import ProxyDialog
 from assets.ui.vpn_ui import VPNManagerDialog
+from assets.ui.bluetooth_window import BluetoothWindow
 from assets.ui.wifi_ui import LogViewerDialog, HiddenNetworkDialog, PasswordDialog
 
 class WifiWindow(Gtk.Window):
@@ -80,6 +81,10 @@ class WifiWindow(Gtk.Window):
         vpn_item = Gtk.MenuItem(label="VPN Manager")
         vpn_item.connect("activate", self.show_vpn_manager)
         menu.append(vpn_item)
+
+        bluetooth_item = Gtk.MenuItem(label="Bluetooth Manager")
+        bluetooth_item.connect("activate", self.show_bluetooth_manager)
+        menu.append(bluetooth_item)
         
         menu.append(Gtk.SeparatorMenuItem())
         
@@ -375,6 +380,11 @@ class WifiWindow(Gtk.Window):
 
     def show_vpn_manager(self, *_):
         dialog = VPNManagerDialog(self)
+        dialog.run()
+        dialog.destroy()
+
+    def show_bluetooth_manager(self, *_):
+        dialog = BluetoothWindow(self)
         dialog.run()
         dialog.destroy()
 

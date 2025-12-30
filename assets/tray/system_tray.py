@@ -10,6 +10,7 @@ from assets.ui.main_window import WifiWindow
 from assets.ui.other_ui import SpeedTestDialog
 from assets.ui.proxy_ui import ProxyDialog
 from assets.ui.vpn_ui import VPNManagerDialog
+from assets.ui.bluetooth_window import BluetoothWindow
 from assets.ui.wifi_ui import LogViewerDialog, HiddenNetworkDialog, PasswordDialog
 
 
@@ -166,6 +167,10 @@ class SystemTrayApp:
         vpn_item.connect("activate", self.show_vpn_manager)
         menu.append(vpn_item)
 
+        bluetooth_item = Gtk.MenuItem(label="Bluetooth Manager")
+        bluetooth_item.connect("activate", self.show_bluetooth_manager)
+        menu.append(bluetooth_item)
+
         menu.append(Gtk.SeparatorMenuItem())
 
         settings_item = Gtk.MenuItem(label="Open Connex Window")
@@ -212,6 +217,11 @@ class SystemTrayApp:
 
     def show_vpn_manager(self, *_):
         dialog = VPNManagerDialog(None)
+        dialog.run()
+        dialog.destroy()
+
+    def show_bluetooth_manager(self, *_):
+        dialog = BluetoothWindow(None)
         dialog.run()
         dialog.destroy()
 
