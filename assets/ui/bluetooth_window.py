@@ -289,29 +289,33 @@ class BluetoothWindow(Gtk.Dialog):
         self.scan_devices()
     
     def scan_devices(self):
-        if not self.bt_switch.get_active():
-            self.set_status("Enable Bluetooth to scan", Gtk.MessageType.WARNING)
+        if self.scanning:
             return False
-        
+
         self.scanning = True
-        self.scan_button.set_sensitive(False)
+        self.store.clear()
         self.scan_spinner.start()
         self.scan_spinner.show()
-        
         self.set_status("Scanning for devices...", Gtk.MessageType.INFO)
-        
-        def scan_thread():
-            self.manager.start_scan()
-            time.sleep(5)
 
-            self.manager.stop_scan()
-            time.sleep(0.5)
+        def on_device(device):
+            GLib.idle_add(self.add_device, device)
 
-            devices = self.manager.get_devices()
-            GLib.idle_add(self.update_device_list, devices)
-        
-        threading.Thread(target=scan_thread, daemon=True).start()
+        self.manager.start_scan(on_device)
         return False
+    
+    def add_device(self, device):
+        self.store.append([
+            device["name"],
+            device["type"],
+            device["mac"],
+            "Paired" if device["paired"] else "Not paired",
+            device["paired"],
+            device["connected"],
+            f"{device['rssi']} dBm" if device["rssi"] is not None else ""
+        ])
+
+
     
     def update_device_list(self, devices):
         self.scan_button.set_sensitive(True)
@@ -393,6 +397,7 @@ class BluetoothWindow(Gtk.Dialog):
     def on_row_activated(self, tree, path, col):
         model = tree.get_model()
         device = {
+            'name': model[path][0].replace("● ", ""),
             'type': model[path][1],
             'mac': model[path][2],
             'status': model[path][3],
@@ -400,7 +405,7 @@ class BluetoothWindow(Gtk.Dialog):
             'connected': model[path][5],
             'rssi': model[path][6]
         }
-        
+
         if device['connected']:
             response = self.show_question(
                 f"Disconnect from {device['name']}?",
@@ -412,6 +417,7 @@ class BluetoothWindow(Gtk.Dialog):
             self.connect_device(device['mac'], device['name'])
         else:
             self.pair_device(device['mac'], device['name'])
+
     
     def pair_device(self, mac, name):
         self.set_status(f"Pairing with {name}...", Gtk.MessageType.INFO)
