@@ -1,15 +1,9 @@
 #!/usr/bin/env python3
-"""
-connex - Wi-Fi Manager for Linux
-Dependencies: python-gobject gtk3 networkmanager libappindicator-gtk3
-"""
 import gi
 import subprocess
 import shlex
-import threading
 import argparse
 import sys
-import os
 sys.path.append('/usr/lib/connex')
 
 import json
@@ -19,10 +13,7 @@ gi.require_version('AppIndicator3', '0.1')
 gi.require_version('Notify', '0.7')
 from gi.repository import Gtk, GObject, GLib, Gdk, Notify, AppIndicator3
 
-
-# IMPORT
-
-from assets.core.speedtest import SpeedTest
+# IMPORTS
 from assets.ui.main_window import WifiWindow
 from assets.tray.system_tray import SystemTrayApp 
 from assets.utils.debug import ensure_config_dir, get_os
@@ -134,8 +125,6 @@ def main():
     parser.add_argument("--proxy-port", help="Proxy port")
 
     args = parser.parse_args()
-    
-    DEBUG_MODE_ARGS = args.debug
     
     ensure_config_dir()
     
