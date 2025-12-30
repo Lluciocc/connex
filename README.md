@@ -16,7 +16,8 @@
 - Command-line mode 
 - QR code connection 
 - Proxy system 
-- VPN Management (WIP)
+- VPN Management 
+- Bluethooth Management
 
 ## Installation
 
@@ -113,6 +114,7 @@ connex stores its configuration and logs in:
 - `libappindicator-gtk3`
 - `libnotify`
 - `python-qrcode`
+- `python-dbus`
 
 ### Optional Dependencies
 - `papirus-icon-theme` - For better icon aesthetics

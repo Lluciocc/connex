@@ -89,6 +89,8 @@ install_arch() {
     local packages=(
         "python"
         "python-gobject"
+        "python-dbus"
+        "dbus"
         "gtk3"
         "networkmanager"
         "libappindicator-gtk3"
@@ -123,6 +125,7 @@ install_debian() {
         "libnotify-bin"
         "python3-qrcode"
         "python3-pil"
+        "python3-dbus"
     )
     
     echo -e "${CYAN}Updating package list...${NC}"
@@ -142,6 +145,7 @@ install_fedora() {
         "libnotify"
         "python3-qrcode"
         "python3-pillow"
+        "python3-dbus"
     )
     
     echo -e "${CYAN}Installing dependencies...${NC}"
