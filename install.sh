@@ -163,6 +163,7 @@ install_opensuse() {
         "libnotify-tools"
         "python3-qrcode"
         "python3-Pillow"
+        "python3-dbus"
     )
     
     echo -e "${CYAN}Installing dependencies...${NC}"
@@ -179,6 +180,7 @@ install_void() {
         "libnotify"
         "python3-qrcode"
         "python3-Pillow"
+        "python3-dbus"
     )
     
     echo -e "${CYAN}Installing dependencies...${NC}"
@@ -195,6 +197,7 @@ install_alpine() {
         "libnotify"
         "py3-qrcode"
         "py3-pillow"
+        "py3-dbus"
     )
     
     echo -e "${CYAN}Installing dependencies...${NC}"
@@ -205,6 +208,7 @@ install_gentoo() {
     local packages=(
         "dev-lang/python"
         "dev-python/pygobject"
+        "dev-python/dbus-python"
         "x11-libs/gtk+"
         "net-misc/networkmanager"
         "dev-libs/libappindicator"

@@ -1,15 +1,19 @@
 from pathlib import Path
 from datetime import datetime
 import platform
+import argparse
 
 from assets.utils.config import Configuration
 # Configuration
 CONFIG_DIR = Path.home() / ".config" / "connex"
 HISTORY_FILE = CONFIG_DIR / "history.log"
 config = Configuration().get_config()
-DEBUG_MODE = config.getboolean('GENERAL', 'debug', fallback=False) if config else False
+parser = argparse.ArgumentParser()
+parser.add_argument("--debug", action="store_true", help="Enable debug mode")
+DEBUG_MODE = (config.getboolean('GENERAL', 'debug', fallback=False) if config else False) or parser.parse_args().debug
 
-def log_debug(msg):
+
+def log_debug(msg):    
     if DEBUG_MODE:
         print(f"[DEBUG] {msg}")
 
