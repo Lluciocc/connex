@@ -28,9 +28,6 @@ class BluetoothManager:
         self._scan_callback: Optional[Callable[[Dict[str, Any]], None]] = None
         self._scanning = False
 
-    # ------------------------------------------------------------------
-    # Adapter / état
-    # ------------------------------------------------------------------
 
     def _find_adapter(self) -> str:
         objects = self.manager.GetManagedObjects()
@@ -72,9 +69,6 @@ class BluetoothManager:
         props.Set(ADAPTER_IFACE, "Discoverable", enabled)
         return True, "Discoverable updated"
 
-    # ------------------------------------------------------------------
-    # Scan (BLE + classique)
-    # ------------------------------------------------------------------
 
     def start_scan(self, on_device_found: Callable[[Dict[str, Any]], None] = None):
         if self._scanning:
@@ -127,9 +121,6 @@ class BluetoothManager:
         if self._scan_callback:
             self._scan_callback(device)
 
-    # ------------------------------------------------------------------
-    # Device actions
-    # ------------------------------------------------------------------
 
     def _get_device_by_mac(self, mac: str) -> Optional[str]:
         objects = self.manager.GetManagedObjects()
@@ -208,7 +199,6 @@ class BluetoothManager:
             "trusted": bool(props.Get(DEVICE_IFACE, "Trusted")),
         }
 
-    # ------------------------------------------------------------------
 
     def _icon_to_type(self, icon: str) -> str:
         return {
