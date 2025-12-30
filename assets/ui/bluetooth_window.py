@@ -1,3 +1,4 @@
+import time
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, Notify
@@ -301,12 +302,12 @@ class BluetoothWindow(Gtk.Dialog):
         
         def scan_thread():
             self.manager.start_scan()
-            
-            import time
-            time.sleep(3)
-            
+            time.sleep(5)
+
+            self.manager.stop_scan()
+            time.sleep(0.5)
+
             devices = self.manager.get_devices()
-            
             GLib.idle_add(self.update_device_list, devices)
         
         threading.Thread(target=scan_thread, daemon=True).start()
