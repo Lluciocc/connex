@@ -1,7 +1,3 @@
-"""
-Proxy Manager for connex - Integrated System & Application Proxy
-Synchronizes proxy settings across system and connex application
-"""
 import subprocess
 import json
 import os
@@ -9,14 +5,10 @@ import sys
 from pathlib import Path
 from typing import Dict, Optional, Tuple, List
 
-# Configuration
 CONFIG_DIR = Path.home() / ".config" / "connex"
 PROXY_CONFIG_FILE = CONFIG_DIR / "proxy.json"
 
-
 class ProxyManager:
-    """Manage system and application proxy settings"""
-    
     def __init__(self):
         self.config_dir = CONFIG_DIR
         self.config_file = PROXY_CONFIG_FILE
@@ -24,14 +16,12 @@ class ProxyManager:
         self.current_proxy = self.load_config()
     
     def ensure_config_dir(self):
-        """Create config directory if it doesn't exist"""
         try:
             self.config_dir.mkdir(parents=True, exist_ok=True)
         except Exception as e:
             print(f"Warning: Could not create config directory: {e}")
     
     def load_config(self) -> Dict:
-        """Load saved proxy configuration"""
         if self.config_file.exists():
             try:
                 with open(self.config_file, 'r') as f:
@@ -42,7 +32,6 @@ class ProxyManager:
         return {}
     
     def save_config(self, config: Dict):
-        """Save proxy configuration"""
         try:
             with open(self.config_file, 'w') as f:
                 json.dump(config, f, indent=2)
@@ -53,15 +42,10 @@ class ProxyManager:
     def set_proxy(self, proxy_type: str, host: str, port: str, 
                   username: str = "", password: str = "", 
                   bypass: str = "localhost,127.0.0.1") -> Tuple[bool, str]:
-        """
-        Set system proxy with immediate application restart
-        proxy_type: 'http', 'https', 'socks4', 'socks5', 'none'
-        """
         try:
             if proxy_type == "none":
                 return self.disable_proxy()
             
-            # Validate inputs
             if not host or not port:
                 return False, "Host and port are required"
             
@@ -71,14 +55,12 @@ class ProxyManager:
                     return False, "Port must be between 1 and 65535"
             except ValueError:
                 return False, "Port must be a number"
-            
-            # Build proxy URL
+
             if username and password:
                 auth = f"{username}:{password}@"
             else:
                 auth = ""
-            
-            # Determine protocol for URL
+
             if proxy_type in ['socks4', 'socks5']:
                 protocol = proxy_type
             elif proxy_type == 'https':
@@ -87,8 +69,7 @@ class ProxyManager:
                 protocol = 'http'
             
             proxy_url = f"{protocol}://{auth}{host}:{port}"
-            
-            # Set environment variables (all variations)
+
             env_vars = {
                 'http_proxy': proxy_url,
                 'https_proxy': proxy_url,
@@ -101,12 +82,10 @@ class ProxyManager:
                 'all_proxy': proxy_url,
                 'ALL_PROXY': proxy_url
             }
-            
-            # Apply to current process
+
             for key, value in env_vars.items():
                 os.environ[key] = value
-            
-            # Save configuration FIRST
+
             config = {
                 'enabled': True,
                 'type': proxy_type,
@@ -118,47 +97,37 @@ class ProxyManager:
                 'env_vars': env_vars
             }
             self.save_config(config)
-            
-            # Apply to system components
+
             results = []
-            
-            # 1. Profile files
+
             if self._write_profile_files(env_vars):
                 results.append("Profile OK")
-            
-            # 2. Environment.d
+
             if self._set_environment_d(env_vars):
                 results.append("environment.d OK")
-            
-            # 3. GNOME
+
             if self._set_gnome_proxy(proxy_type, host, port, username, password, bypass):
                 results.append("GNOME OK")
-            
-            # 4. KDE
+
             if self._set_kde_proxy(proxy_url, bypass):
                 results.append("KDE OK")
-            
-            # 5. APT (for Debian/Ubuntu)
+
             if self._set_apt_proxy(proxy_url):
                 results.append("APT OK")
-            
-            # 6. Git
+
             if self._set_git_proxy(proxy_url):
                 results.append("Git OK")
-            
-            # 7. NPM (if installed)
+
             if self._set_npm_proxy(proxy_url):
                 results.append("NPM OK")
-            
-            # 8. Docker (if installed)
+
             if self._set_docker_proxy(proxy_url):
                 results.append("Docker OK")
             
             status = f"✓ Proxy configured: {protocol}://{host}:{port}"
             if results:
                 status += f"\n  Applied to: {', '.join(results)}"
-            
-            # Show how to apply immediately
+
             status += f"\n\n⚠ To apply NOW in current shell:\n  source <(python {sys.argv[0]} export)"
             status += "\n\n⚠ To apply system-wide: Logout/Login required"
             
@@ -168,9 +137,7 @@ class ProxyManager:
             return False, f"Failed to set proxy: {str(e)}"
     
     def disable_proxy(self) -> Tuple[bool, str]:
-        """Disable all proxy settings"""
         try:
-            # Clear environment variables
             env_vars_to_clear = [
                 'http_proxy', 'https_proxy', 'ftp_proxy',
                 'HTTP_PROXY', 'HTTPS_PROXY', 'FTP_PROXY',
@@ -179,8 +146,7 @@ class ProxyManager:
             
             for var in env_vars_to_clear:
                 os.environ.pop(var, None)
-            
-            # Remove configuration files
+
             self._remove_profile_files()
             self._remove_environment_d()
             self._disable_gnome_proxy()
@@ -189,8 +155,7 @@ class ProxyManager:
             self._remove_git_proxy()
             self._remove_npm_proxy()
             self._remove_docker_proxy()
-            
-            # Save config
+
             config = {'enabled': False}
             self.save_config(config)
             
@@ -198,18 +163,15 @@ class ProxyManager:
         
         except Exception as e:
             return False, f"Failed to disable proxy: {str(e)}"
-    
-    # ============== PROFILE FILES ==============
+
     
     def _write_profile_files(self, env_vars: Dict[str, str]) -> bool:
-        """Write proxy settings to shell profile files"""
         try:
             proxy_script = "# Connex Proxy Configuration\n"
             proxy_script += "# Auto-generated - DO NOT EDIT MANUALLY\n\n"
             for key, value in env_vars.items():
                 proxy_script += f'export {key}="{value}"\n'
-            
-            # Write to user's profile directory
+
             profile_dir = Path.home() / ".profile.d"
             profile_dir.mkdir(parents=True, exist_ok=True)
             profile_file = profile_dir / "connex-proxy.sh"
@@ -218,11 +180,9 @@ class ProxyManager:
                 f.write(proxy_script)
             
             profile_file.chmod(0o644)
-            
-            # Update .bashrc
+
             self._update_shell_rc(".bashrc", profile_file)
-            
-            # Update .zshrc
+
             self._update_shell_rc(".zshrc", profile_file)
             
             return True
@@ -231,7 +191,6 @@ class ProxyManager:
             return False
     
     def _update_shell_rc(self, rc_name: str, profile_file: Path):
-        """Update shell RC file to source proxy config"""
         rc_file = Path.home() / rc_name
         if rc_file.exists():
             try:
@@ -248,18 +207,15 @@ class ProxyManager:
                 print(f"Failed to update {rc_name}: {e}")
     
     def _remove_profile_files(self):
-        """Remove proxy profile files"""
         try:
             profile_file = Path.home() / ".profile.d" / "connex-proxy.sh"
             if profile_file.exists():
                 profile_file.unlink()
         except Exception as e:
             print(f"Failed to remove profile files: {e}")
-    
-    # ============== ENVIRONMENT.D ==============
+
     
     def _set_environment_d(self, env_vars: Dict[str, str]) -> bool:
-        """Set proxy in systemd user environment"""
         try:
             env_dir = Path.home() / ".config" / "environment.d"
             env_dir.mkdir(parents=True, exist_ok=True)
@@ -277,19 +233,15 @@ class ProxyManager:
             return False
     
     def _remove_environment_d(self):
-        """Remove systemd environment file"""
         try:
             env_file = Path.home() / ".config" / "environment.d" / "connex-proxy.conf"
             if env_file.exists():
                 env_file.unlink()
         except Exception as e:
             print(f"Failed to remove environment.d: {e}")
-    
-    # ============== GNOME ==============
-    
+
     def _set_gnome_proxy(self, proxy_type: str, host: str, port: str,
                         username: str, password: str, bypass: str) -> bool:
-        """Set GNOME/GSETTINGS proxy"""
         try:
             result = subprocess.run(
                 ["which", "gsettings"],
@@ -298,13 +250,11 @@ class ProxyManager:
             )
             if result.returncode != 0:
                 return False
-            
-            # Set mode to manual
+
             subprocess.run([
                 "gsettings", "set", "org.gnome.system.proxy", "mode", "manual"
             ], check=False, capture_output=True, timeout=2)
-            
-            # Set HTTP proxy
+
             subprocess.run([
                 "gsettings", "set", "org.gnome.system.proxy.http", "host", host
             ], check=False, capture_output=True, timeout=2)
@@ -312,8 +262,7 @@ class ProxyManager:
             subprocess.run([
                 "gsettings", "set", "org.gnome.system.proxy.http", "port", str(port)
             ], check=False, capture_output=True, timeout=2)
-            
-            # Set HTTPS proxy
+
             subprocess.run([
                 "gsettings", "set", "org.gnome.system.proxy.https", "host", host
             ], check=False, capture_output=True, timeout=2)
@@ -321,8 +270,7 @@ class ProxyManager:
             subprocess.run([
                 "gsettings", "set", "org.gnome.system.proxy.https", "port", str(port)
             ], check=False, capture_output=True, timeout=2)
-            
-            # Set SOCKS proxy if needed
+
             if proxy_type in ['socks4', 'socks5']:
                 subprocess.run([
                     "gsettings", "set", "org.gnome.system.proxy.socks", "host", host
@@ -331,16 +279,14 @@ class ProxyManager:
                 subprocess.run([
                     "gsettings", "set", "org.gnome.system.proxy.socks", "port", str(port)
                 ], check=False, capture_output=True, timeout=2)
-            
-            # Set bypass list
+
             if bypass:
                 bypass_list = [f"'{item.strip()}'" for item in bypass.split(',')]
                 bypass_str = "[" + ", ".join(bypass_list) + "]"
                 subprocess.run([
                     "gsettings", "set", "org.gnome.system.proxy", "ignore-hosts", bypass_str
                 ], check=False, capture_output=True, timeout=2)
-            
-            # Set authentication
+
             if username:
                 subprocess.run([
                     "gsettings", "set", "org.gnome.system.proxy.http", 
@@ -364,7 +310,6 @@ class ProxyManager:
             return False
     
     def _disable_gnome_proxy(self) -> bool:
-        """Disable GNOME proxy"""
         try:
             subprocess.run([
                 "gsettings", "set", "org.gnome.system.proxy", "mode", "none"
@@ -372,11 +317,9 @@ class ProxyManager:
             return True
         except:
             return False
-    
-    # ============== KDE ==============
+
     
     def _set_kde_proxy(self, proxy_url: str, bypass: str) -> bool:
-        """Set KDE proxy"""
         try:
             result = subprocess.run(
                 ["which", "kwriteconfig5"],
@@ -416,7 +359,6 @@ class ProxyManager:
             return False
     
     def _disable_kde_proxy(self) -> bool:
-        """Disable KDE proxy"""
         try:
             subprocess.run([
                 "kwriteconfig5", "--file", "kioslaverc",
@@ -426,16 +368,13 @@ class ProxyManager:
             return True
         except:
             return False
-    
-    # ============== APT ==============
+
     
     def _set_apt_proxy(self, proxy_url: str) -> bool:
-        """Set APT proxy"""
         try:
             apt_conf = Path("/etc/apt/apt.conf.d/95connex-proxy")
             content = f'Acquire::http::Proxy "{proxy_url}";\nAcquire::https::Proxy "{proxy_url}";\n'
-            
-            # Try to write with sudo
+
             result = subprocess.run(
                 ["sudo", "tee", str(apt_conf)],
                 input=content.encode(),
@@ -447,7 +386,6 @@ class ProxyManager:
             return False
     
     def _remove_apt_proxy(self):
-        """Remove APT proxy"""
         try:
             subprocess.run(
                 ["sudo", "rm", "-f", "/etc/apt/apt.conf.d/95connex-proxy"],
@@ -456,11 +394,9 @@ class ProxyManager:
             )
         except:
             pass
-    
-    # ============== GIT ==============
+
     
     def _set_git_proxy(self, proxy_url: str) -> bool:
-        """Set Git proxy"""
         try:
             subprocess.run(
                 ["git", "config", "--global", "http.proxy", proxy_url],
@@ -477,7 +413,6 @@ class ProxyManager:
             return False
     
     def _remove_git_proxy(self):
-        """Remove Git proxy"""
         try:
             subprocess.run(
                 ["git", "config", "--global", "--unset", "http.proxy"],
@@ -491,11 +426,9 @@ class ProxyManager:
             )
         except:
             pass
-    
-    # ============== NPM ==============
+
     
     def _set_npm_proxy(self, proxy_url: str) -> bool:
-        """Set NPM proxy"""
         try:
             result = subprocess.run(
                 ["which", "npm"],
@@ -520,7 +453,6 @@ class ProxyManager:
             return False
     
     def _remove_npm_proxy(self):
-        """Remove NPM proxy"""
         try:
             subprocess.run(
                 ["npm", "config", "delete", "proxy"],
@@ -534,11 +466,9 @@ class ProxyManager:
             )
         except:
             pass
-    
-    # ============== DOCKER ==============
+
     
     def _set_docker_proxy(self, proxy_url: str) -> bool:
-        """Set Docker proxy"""
         try:
             docker_dir = Path.home() / ".docker"
             docker_dir.mkdir(parents=True, exist_ok=True)
@@ -566,7 +496,6 @@ class ProxyManager:
             return False
     
     def _remove_docker_proxy(self):
-        """Remove Docker proxy"""
         try:
             config_file = Path.home() / ".docker" / "config.json"
             if config_file.exists():
@@ -580,15 +509,12 @@ class ProxyManager:
                     json.dump(config, f, indent=2)
         except:
             pass
-    
-    # ============== UTILITY FUNCTIONS ==============
+
     
     def get_current_proxy(self) -> Dict:
-        """Get current proxy configuration"""
         return self.current_proxy.copy()
     
     def test_proxy(self, host: str = None, port: str = None) -> Tuple[bool, str]:
-        """Test if proxy is working"""
         try:
             import socket
             
@@ -615,7 +541,6 @@ class ProxyManager:
             return False, f"✗ Test failed: {str(e)}"
     
     def export_to_shell(self) -> str:
-        """Export proxy settings as shell commands"""
         if not self.current_proxy.get('enabled'):
             return "# No proxy configured\nunset http_proxy https_proxy ftp_proxy HTTP_PROXY HTTPS_PROXY FTP_PROXY no_proxy NO_PROXY all_proxy ALL_PROXY\n"
         
@@ -630,7 +555,6 @@ class ProxyManager:
         return '\n'.join(commands)
     
     def get_status_text(self) -> str:
-        """Get human-readable proxy status"""
         if not self.current_proxy.get('enabled'):
             return "✗ No proxy configured"
         
@@ -646,7 +570,6 @@ class ProxyManager:
         return status
     
     def get_proxy_presets(self) -> Dict[str, Dict]:
-        """Get common proxy presets"""
         return {
             "None": {
                 "type": "none",
@@ -681,17 +604,14 @@ class ProxyManager:
         }
 
 
-# ============== CLI INTERFACE ==============
-
 def cli_proxy():
-    """CLI interface for proxy management"""
     pm = ProxyManager()
     
     if len(sys.argv) < 2:
         print("╔══════════════════════════════════════════════╗")
         print("║            Connex Proxy Manager              ║")
         print("╚══════════════════════════════════════════════╝")
-        print("\n📋 Usage:")
+        print("\nUsage:")
         print("  status                                - Show current proxy")
         print("  set <type> <host> <port> [user] [pass] - Set proxy")
         print("  disable                               - Disable proxy")

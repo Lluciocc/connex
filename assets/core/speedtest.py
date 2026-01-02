@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""
-Custom speedtest module for connex
-Simple implementation without external dependencies
-"""
 import socket
 import time
 import urllib.request
@@ -11,24 +7,16 @@ import threading
 from typing import Optional, Callable, Dict
 
 class SpeedTest:
-    """Custom speed test implementation"""
-    
-    # Test servers 
     DOWNLOAD_URLS = [
         #"https://speed.hetzner.de/100MB.bin", # 100MB file
         "http://speedtest.tele2.net/10MB.zip",
         "http://proof.ovh.net/files/10Mb.dat",
         "http://ipv4.download.thinkbroadband.com/10MB.zip",
     ]
-    
-    # Upload test server
+
     UPLOAD_URL = "https://httpbin.org/post"
     
     def __init__(self, callback: Optional[Callable] = None):
-        """
-        Initialize speedtest
-        callback: function(stage, progress, message) to report progress
-        """
         self.callback = callback
         self.results = {
             'ping': 0.0,
@@ -40,19 +28,13 @@ class SpeedTest:
         self._cancelled = False
     
     def cancel(self):
-        """Cancel ongoing test"""
         self._cancelled = True
     
     def _report(self, stage: str, progress: float, message: str):
-        """Report progress to callback"""
         if self.callback:
             self.callback(stage, progress, message)
     
     def test_ping(self, host: str = "8.8.8.8", port: int = 53, timeout: int = 3) -> float:
-        """
-        Test ping latency to a host
-        Returns latency in milliseconds
-        """
         if self._cancelled:
             return 0.0
         
@@ -98,10 +80,6 @@ class SpeedTest:
             return 0.0
     
     def test_download(self, size_mb: int = 10, timeout: int = 30) -> float:
-        """
-        Test download speed
-        Returns speed in Mbps
-        """
         if self._cancelled:
             return 0.0
         
@@ -134,8 +112,7 @@ class SpeedTest:
                             break
                         
                         downloaded += len(chunk)
-                        
-                        # Update progress
+
                         elapsed = time.time() - start_time
                         if elapsed > 0:
                             speed_mbps = (downloaded * 8) / (elapsed * 1_000_000)
@@ -164,17 +141,12 @@ class SpeedTest:
         return self.results['download']
     
     def test_upload(self, size_kb: int = 1024, timeout: int = 30) -> float:
-        """
-        Test upload speed
-        Returns speed in Mbps
-        """
         if self._cancelled:
             return 0.0
         
         self._report("upload", 0.7, "Testing upload speed...")
         
         try:
-            # Generate random data
             data = b'0' * (size_kb * 1024)
             
             start_time = time.time()
@@ -201,10 +173,6 @@ class SpeedTest:
         return 0.0
     
     def run_full_test(self) -> Dict:
-        """
-        Run complete speed test (ping + download + upload)
-        Returns dict with results
-        """
         try:
             self._report("init", 0.0, "Initializing test...")
             
@@ -236,7 +204,6 @@ class SpeedTest:
 
 # CLI test function
 def cli_speedtest():
-    """Run speedtest from command line"""
     def progress_callback(stage, progress, message):
         bar_length = 30
         filled = int(bar_length * progress)

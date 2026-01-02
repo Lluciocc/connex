@@ -28,14 +28,12 @@ class AddVPNDialog(Gtk.Dialog):
         box.set_margin_end(20)
         box.set_margin_top(20)
         box.set_margin_bottom(20)
-        
-        # Title
+
         title = Gtk.Label()
         title.set_markup("<b>Choose VPN Type</b>")
         title.set_xalign(0)
         box.pack_start(title, False, False, 0)
-        
-        # VPN type selection
+
         self.vpn_type_combo = Gtk.ComboBoxText()
         for display_name, _ in self.VPN_TYPES:
             self.vpn_type_combo.append_text(display_name)
@@ -48,25 +46,20 @@ class AddVPNDialog(Gtk.Dialog):
         type_box.pack_start(type_label, False, False, 0)
         type_box.pack_start(self.vpn_type_combo, True, True, 0)
         box.pack_start(type_box, False, False, 0)
-        
-        # Stack for different config types
+
         self.stack = Gtk.Stack()
         self.stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
         self.stack.set_transition_duration(200)
-        
-        # OpenVPN config
+
         self.openvpn_box = self.create_openvpn_config()
         self.stack.add_named(self.openvpn_box, "openvpn")
-        
-        # WireGuard config
+
         self.wireguard_box = self.create_wireguard_config()
         self.stack.add_named(self.wireguard_box, "wireguard")
-        
-        # Import config
+
         self.import_box = self.create_import_config()
         self.stack.add_named(self.import_box, "import")
-        
-        # Generic config (L2TP, PPTP)
+
         self.generic_box = self.create_generic_config()
         self.stack.add_named(self.generic_box, "generic")
         
@@ -76,8 +69,7 @@ class AddVPNDialog(Gtk.Dialog):
     
     def create_openvpn_config(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        
-        # Connection name
+
         name_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         name_label = Gtk.Label(label="Connection Name:")
         name_label.set_width_chars(18)
@@ -86,8 +78,7 @@ class AddVPNDialog(Gtk.Dialog):
         name_box.pack_start(name_label, False, False, 0)
         name_box.pack_start(self.openvpn_name, True, True, 0)
         box.pack_start(name_box, False, False, 0)
-        
-        # Gateway/Server
+
         gateway_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         gateway_label = Gtk.Label(label="Gateway:")
         gateway_label.set_width_chars(18)
@@ -96,8 +87,7 @@ class AddVPNDialog(Gtk.Dialog):
         gateway_box.pack_start(gateway_label, False, False, 0)
         gateway_box.pack_start(self.openvpn_gateway, True, True, 0)
         box.pack_start(gateway_box, False, False, 0)
-        
-        # Username
+
         user_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         user_label = Gtk.Label(label="Username:")
         user_label.set_width_chars(18)
@@ -106,8 +96,7 @@ class AddVPNDialog(Gtk.Dialog):
         user_box.pack_start(user_label, False, False, 0)
         user_box.pack_start(self.openvpn_user, True, True, 0)
         box.pack_start(user_box, False, False, 0)
-        
-        # Password
+
         pass_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         pass_label = Gtk.Label(label="Password:")
         pass_label.set_width_chars(18)
@@ -117,8 +106,7 @@ class AddVPNDialog(Gtk.Dialog):
         pass_box.pack_start(pass_label, False, False, 0)
         pass_box.pack_start(self.openvpn_pass, True, True, 0)
         box.pack_start(pass_box, False, False, 0)
-        
-        # Info
+
         info = Gtk.Label()
         info.set_markup("<small><i>For advanced OpenVPN configs, use 'Import from file'</i></small>")
         info.set_xalign(0)
@@ -128,8 +116,7 @@ class AddVPNDialog(Gtk.Dialog):
     
     def create_wireguard_config(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        
-        # Connection name
+
         name_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         name_label = Gtk.Label(label="Connection Name:")
         name_label.set_width_chars(18)
@@ -138,8 +125,7 @@ class AddVPNDialog(Gtk.Dialog):
         name_box.pack_start(name_label, False, False, 0)
         name_box.pack_start(self.wg_name, True, True, 0)
         box.pack_start(name_box, False, False, 0)
-        
-        # Private key
+
         key_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         key_label = Gtk.Label(label="Private Key:")
         key_label.set_width_chars(18)
@@ -149,8 +135,7 @@ class AddVPNDialog(Gtk.Dialog):
         key_box.pack_start(key_label, False, False, 0)
         key_box.pack_start(self.wg_private_key, True, True, 0)
         box.pack_start(key_box, False, False, 0)
-        
-        # Address
+
         addr_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         addr_label = Gtk.Label(label="IP Address:")
         addr_label.set_width_chars(18)
@@ -159,8 +144,7 @@ class AddVPNDialog(Gtk.Dialog):
         addr_box.pack_start(addr_label, False, False, 0)
         addr_box.pack_start(self.wg_address, True, True, 0)
         box.pack_start(addr_box, False, False, 0)
-        
-        # Peer public key
+
         peer_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         peer_label = Gtk.Label(label="Peer Public Key:")
         peer_label.set_width_chars(18)
@@ -169,8 +153,7 @@ class AddVPNDialog(Gtk.Dialog):
         peer_box.pack_start(peer_label, False, False, 0)
         peer_box.pack_start(self.wg_peer, True, True, 0)
         box.pack_start(peer_box, False, False, 0)
-        
-        # Endpoint
+
         endpoint_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         endpoint_label = Gtk.Label(label="Endpoint:")
         endpoint_label.set_width_chars(18)
@@ -192,12 +175,10 @@ class AddVPNDialog(Gtk.Dialog):
                        "• WireGuard (.conf)")
         info.set_xalign(0)
         box.pack_start(info, False, False, 0)
-        
-        # File chooser
+
         self.file_chooser = Gtk.FileChooserButton(title="Select VPN Config")
         self.file_chooser.set_action(Gtk.FileChooserAction.OPEN)
-        
-        # Add filters
+
         filter_ovpn = Gtk.FileFilter()
         filter_ovpn.set_name("OpenVPN configs")
         filter_ovpn.add_pattern("*.ovpn")
@@ -210,8 +191,7 @@ class AddVPNDialog(Gtk.Dialog):
         self.file_chooser.add_filter(filter_all)
         
         box.pack_start(self.file_chooser, False, False, 0)
-        
-        # Connection name
+
         name_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         name_label = Gtk.Label(label="Connection Name:")
         name_label.set_width_chars(18)
@@ -225,8 +205,7 @@ class AddVPNDialog(Gtk.Dialog):
     
     def create_generic_config(self):
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
-        
-        # Connection name
+
         name_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         name_label = Gtk.Label(label="Connection Name:")
         name_label.set_width_chars(18)
@@ -234,8 +213,7 @@ class AddVPNDialog(Gtk.Dialog):
         name_box.pack_start(name_label, False, False, 0)
         name_box.pack_start(self.generic_name, True, True, 0)
         box.pack_start(name_box, False, False, 0)
-        
-        # Gateway
+
         gateway_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         gateway_label = Gtk.Label(label="Gateway:")
         gateway_label.set_width_chars(18)
@@ -243,8 +221,7 @@ class AddVPNDialog(Gtk.Dialog):
         gateway_box.pack_start(gateway_label, False, False, 0)
         gateway_box.pack_start(self.generic_gateway, True, True, 0)
         box.pack_start(gateway_box, False, False, 0)
-        
-        # Username
+
         user_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         user_label = Gtk.Label(label="Username:")
         user_label.set_width_chars(18)
@@ -252,8 +229,7 @@ class AddVPNDialog(Gtk.Dialog):
         user_box.pack_start(user_label, False, False, 0)
         user_box.pack_start(self.generic_user, True, True, 0)
         box.pack_start(user_box, False, False, 0)
-        
-        # Password
+
         pass_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         pass_label = Gtk.Label(label="Password:")
         pass_label.set_width_chars(18)
@@ -330,14 +306,12 @@ class VPNDetailsDialog(Gtk.Dialog):
         box.set_margin_end(20)
         box.set_margin_top(20)
         box.set_margin_bottom(20)
-        
-        # Title
+
         title = Gtk.Label()
         title.set_markup(f"<b>{vpn_name}</b>")
         title.set_xalign(0)
         box.pack_start(title, False, False, 0)
-        
-        # Status
+
         status_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         status_icon = Gtk.Image()
         if status['connected']:
@@ -352,11 +326,9 @@ class VPNDetailsDialog(Gtk.Dialog):
         status_box.pack_start(status_icon, False, False, 0)
         status_box.pack_start(status_label, False, False, 0)
         box.pack_start(status_box, False, False, 0)
-        
-        # Details notebook
+
         notebook = Gtk.Notebook()
-        
-        # Connection tab
+
         conn_scroll = Gtk.ScrolledWindow()
         conn_text = Gtk.TextView()
         conn_text.set_editable(False)
@@ -379,8 +351,7 @@ class VPNDetailsDialog(Gtk.Dialog):
         conn_buffer.set_text("\n".join(conn_info))
         conn_scroll.add(conn_text)
         notebook.append_page(conn_scroll, Gtk.Label(label="Status"))
-        
-        # Configuration tab
+
         config_scroll = Gtk.ScrolledWindow()
         config_text = Gtk.TextView()
         config_text.set_editable(False)
@@ -553,12 +524,10 @@ class VPNManagerDialog(Gtk.Dialog):
             cell.set_property("text", "○ Disconnected")
     
     def set_status(self, message, message_type=Gtk.MessageType.INFO):
-        """Set status bar message"""
         self.status_label.set_text(message)
         self.status_bar.set_message_type(message_type)
         self.status_revealer.set_reveal_child(True)
-        
-        # Auto-hide after 4 seconds for info messages
+
         if message_type == Gtk.MessageType.INFO:
             GLib.timeout_add_seconds(4, lambda: self.status_revealer.set_reveal_child(False))
     
@@ -807,7 +776,6 @@ class VPNManagerDialog(Gtk.Dialog):
                 }
                 success, message = self.manager.create_wireguard(config['name'], wg_config)
             else:
-                # Generic VPN types
                 GLib.idle_add(self.set_status, 
                             "Manual configuration not yet supported. Use import or WireGuard.",
                             Gtk.MessageType.WARNING)

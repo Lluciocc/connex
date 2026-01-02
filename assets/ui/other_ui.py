@@ -34,26 +34,22 @@ class SpeedTestDialog(Gtk.Dialog):
         box.set_margin_end(20)
         box.set_margin_top(20)
         box.set_margin_bottom(20)
-        
-        # Title
+
         title = Gtk.Label()
         title.set_markup("<b>Testing connection speed...</b>")
         title.set_xalign(0)
         box.pack_start(title, False, False, 0)
-        
-        # Progress bar
+
         self.progress = Gtk.ProgressBar()
         self.progress.set_show_text(True)
         self.progress.set_text("Ready to start")
         box.pack_start(self.progress, False, False, 0)
-        
-        # Status label
+
         self.status_label = Gtk.Label(label="")
         self.status_label.set_xalign(0)
         self.status_label.set_line_wrap(True)
         box.pack_start(self.status_label, False, False, 0)
-        
-        # Results area
+
         results_frame = Gtk.Frame(label="Results")
         results_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         results_box.set_margin_start(12)
@@ -83,12 +79,10 @@ class SpeedTestDialog(Gtk.Dialog):
         
         self.connect("response", self.on_response)
         self.show_all()
-        
-        # Start test
+
         self.start_test()
     
     def on_response(self, dialog, response):
-        """Handle dialog response"""
         if response == Gtk.ResponseType.CANCEL and self.test_running:
             if self.test:
                 self.test.cancel()
@@ -96,14 +90,12 @@ class SpeedTestDialog(Gtk.Dialog):
                 self.test_running = False
     
     def start_test(self):
-        """Start the speed test"""
         self.test_running = True
         self.test = SpeedTest(callback=self.on_progress)
         self.test_thread = threading.Thread(target=self.run_test, daemon=True)
         self.test_thread.start()
     
     def run_test(self):
-        """Run test in background thread"""
         try:
             results = self.test.run_full_test()
             GLib.idle_add(self.display_results, results)
@@ -113,15 +105,12 @@ class SpeedTestDialog(Gtk.Dialog):
             self.test_running = False
     
     def on_progress(self, stage, progress, message):
-        """Progress callback from speedtest"""
         GLib.idle_add(self.update_progress, progress, message)
     
     def update_progress(self, fraction, text):
-        """Update progress bar"""
         self.progress.set_fraction(fraction)
         self.progress.set_text(text)
-        
-        # Update status
+
         if fraction < 0.3:
             stage = "Testing latency..."
         elif fraction < 0.7:
@@ -135,7 +124,6 @@ class SpeedTestDialog(Gtk.Dialog):
         return False
     
     def display_results(self, results):
-        """Display test results"""
         if results.get('error'):
             self.show_error(results['error'])
             return False
@@ -147,7 +135,6 @@ class SpeedTestDialog(Gtk.Dialog):
         
         self.server_label.set_markup(f"<b>Server:</b> {server}")
         
-        # Color code ping
         if ping < 50:
             ping_color = "green"
         elif ping < 100:
@@ -157,8 +144,7 @@ class SpeedTestDialog(Gtk.Dialog):
         self.ping_label.set_markup(
             f"<b>Ping:</b> <span color='{ping_color}'>{ping:.1f} ms</span>"
         )
-        
-        # Color code download
+
         if download > 50:
             dl_color = "green"
         elif download > 10:
@@ -189,7 +175,6 @@ class SpeedTestDialog(Gtk.Dialog):
         return False
     
     def show_error(self, message):
-        """Show error message"""
         self.progress.set_fraction(0)
         self.progress.set_text("Failed")
         self.status_label.set_markup(f"<span color='red'>{message}</span>")
@@ -208,18 +193,15 @@ class QRCodeDialog(Gtk.Dialog):
         box.set_margin_end(20)
         box.set_margin_top(20)
         box.set_margin_bottom(20)
-        
-        # Title
+
         title = Gtk.Label()
         title.set_markup(f"<b>Scan to connect to:</b>\n{ssid}")
         title.set_xalign(0.5)
         box.pack_start(title, False, False, 0)
-        
-        # Generate QR code
+
         qr_data = self.generate_wifi_qr_data(ssid, password, security)
         qr_image = self.create_qr_image(qr_data)
-        
-        # Display QR code
+
         self.qr_pixbuf = self.pil_to_pixbuf(qr_image)
         qr_gtk_image = Gtk.Image.new_from_pixbuf(self.qr_pixbuf)
         
@@ -227,15 +209,13 @@ class QRCodeDialog(Gtk.Dialog):
         frame.set_shadow_type(Gtk.ShadowType.IN)
         frame.add(qr_gtk_image)
         box.pack_start(frame, True, True, 0)
-        
-        # Info label
+
         info = Gtk.Label()
         security_text = "Open Network" if security == "Open" else f"Security: {security}"
         info.set_markup(f"<small>{security_text}</small>")
         info.set_xalign(0.5)
         box.pack_start(info, False, False, 0)
-        
-        # Instructions
+
         instructions = Gtk.Label()
         instructions.set_markup(
             "<small><i>Scan this QR code with your phone's camera\n"
@@ -252,8 +232,6 @@ class QRCodeDialog(Gtk.Dialog):
         self.show_all()
     
     def generate_wifi_qr_data(self, ssid, password, security):
-        """Generate WiFi QR code data string"""
-        # Escape special characters
         ssid_escaped = ssid.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace(":", "\\:")
         password_escaped = password.replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace(":", "\\:")
         
@@ -271,7 +249,6 @@ class QRCodeDialog(Gtk.Dialog):
         return qr_string
     
     def create_qr_image(self, data):
-        """Create QR code image"""
         qr = qrcode.QRCode(
             version=1,
             error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -285,16 +262,13 @@ class QRCodeDialog(Gtk.Dialog):
         return img
     
     def pil_to_pixbuf(self, pil_image):
-        """Convert PIL Image to GdkPixbuf"""
         if pil_image.mode != 'RGB':
             pil_image = pil_image.convert('RGB')
-        
-        # Save to bytes
+
         buffer = BytesIO()
         pil_image.save(buffer, format='PNG')
         buffer.seek(0)
-        
-        # Load into pixbuf
+
         loader = GdkPixbuf.PixbufLoader.new_with_type('png')
         loader.write(buffer.read())
         loader.close()
@@ -302,9 +276,7 @@ class QRCodeDialog(Gtk.Dialog):
         return loader.get_pixbuf()
     
     def on_response(self, dialog, response):
-        """Handle dialog response"""
         if response == Gtk.ResponseType.APPLY:
-            # Save QR code
             file_dialog = Gtk.FileChooserDialog(
                 title="Save QR Code",
                 parent=self,
@@ -313,8 +285,7 @@ class QRCodeDialog(Gtk.Dialog):
             file_dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
             file_dialog.add_button("Save", Gtk.ResponseType.OK)
             file_dialog.set_current_name(f"wifi_qr_{self.ssid}.png")
-            
-            # Add filter for PNG
+
             filter_png = Gtk.FileFilter()
             filter_png.set_name("PNG images")
             filter_png.add_mime_type("image/png")
@@ -383,8 +354,7 @@ class AboutDialog(Gtk.Dialog):
 
         self.set_default_size(380, 320)
         self.set_resizable(False)
-        
-        # Popup style
+
         self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
         self.set_type_hint(Gdk.WindowTypeHint.DIALOG)
         self.set_keep_above(True)
@@ -397,13 +367,11 @@ class AboutDialog(Gtk.Dialog):
         box.set_margin_end(40)
         box.set_margin_top(30)
         box.set_margin_bottom(30)
-        
-        # App icon
+
         icon = Gtk.Image.new_from_icon_name("network-wireless-symbolic", Gtk.IconSize.INVALID)
         icon.set_pixel_size(64)
         box.pack_start(icon, False, False, 0)
-        
-        # App name & version
+
         name_label = Gtk.Label()
         name_label.set_markup("<span size='x-large' weight='bold'>Connex</span>")
         box.pack_start(name_label, False, False, 0)
@@ -411,20 +379,17 @@ class AboutDialog(Gtk.Dialog):
         version_label = Gtk.Label()
         version_label.set_markup(f"<span size='small'>Version {VERSION}</span>")
         box.pack_start(version_label, False, False, 0)
-        
-        # Description
+
         desc_label = Gtk.Label()
         desc_label.set_markup("<span size='small'>Wi-Fi Manager for Linux</span>")
         desc_label.set_opacity(0.7)
         box.pack_start(desc_label, False, False, 0)
-        
-        # Author
+
         author_label = Gtk.Label()
         author_label.set_markup("<span size='small'>by Lluciocc</span>")
         author_label.set_opacity(0.6)
         box.pack_start(author_label, False, False, 0)
-        
-        # Links
+
         github_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
         github_box.set_halign(Gtk.Align.CENTER)
         github_button = Gtk.Button(label="GitHub")
@@ -441,13 +406,11 @@ class AboutDialog(Gtk.Dialog):
 
         coffee_box.pack_start(coffee_button, False, False, 0)  
         box.pack_start(coffee_box, False, False, 0)
-        
-        # License
+
         license_label = Gtk.Label()
         license_label.set_markup("<span size='small' alpha='50%'>MIT License</span>")
         box.pack_start(license_label, False, False, 0)
-        
-        # Close button
+
         close_button = Gtk.Button(label="Close")
         close_button.set_size_request(100, -1)
         close_button.connect("clicked", lambda x: self.response(Gtk.ResponseType.CLOSE))

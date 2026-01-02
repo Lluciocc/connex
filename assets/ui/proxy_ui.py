@@ -13,8 +13,7 @@ class ProxyDialog(Gtk.Dialog):
         self.add_button("Test", Gtk.ResponseType.APPLY)
         self.add_button("Apply", Gtk.ResponseType.OK)
         self.set_default_size(550, 450)
-        
-        # Popup style
+
         self.set_position(Gtk.WindowPosition.CENTER_ALWAYS)
         self.set_keep_above(True)
         self.set_type_hint(Gdk.WindowTypeHint.DIALOG)
@@ -30,8 +29,7 @@ class ProxyDialog(Gtk.Dialog):
         box.set_margin_end(20)
         box.set_margin_top(20)
         box.set_margin_bottom(20)
-        
-        # Current status with more details
+
         status_frame = Gtk.Frame(label="Current Status")
         status_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         status_box.set_margin_start(12)
@@ -47,8 +45,7 @@ class ProxyDialog(Gtk.Dialog):
         
         status_frame.add(status_box)
         box.pack_start(status_frame, False, False, 0)
-        
-        # Proxy type selector
+
         type_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         type_label = Gtk.Label(label="Proxy Type:")
         type_label.set_width_chars(15)
@@ -65,8 +62,7 @@ class ProxyDialog(Gtk.Dialog):
         type_box.pack_start(self.type_combo, True, True, 0)
         
         box.pack_start(type_box, False, False, 0)
-        
-        # Host
+
         host_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         host_label = Gtk.Label(label="Host:")
         host_label.set_width_chars(15)
@@ -76,8 +72,7 @@ class ProxyDialog(Gtk.Dialog):
         self.host_entry.set_placeholder_text("proxy.example.com or 127.0.0.1")
         host_box.pack_start(self.host_entry, True, True, 0)
         box.pack_start(host_box, False, False, 0)
-        
-        # Port
+
         port_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         port_label = Gtk.Label(label="Port:")
         port_label.set_width_chars(15)
@@ -88,14 +83,12 @@ class ProxyDialog(Gtk.Dialog):
         self.port_entry.set_width_chars(10)
         port_box.pack_start(self.port_entry, False, False, 0)
         box.pack_start(port_box, False, False, 0)
-        
-        # Authentication section
+
         auth_expander = Gtk.Expander(label="Authentication (Optional)")
         auth_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         auth_box.set_margin_start(12)
         auth_box.set_margin_top(6)
-        
-        # Username
+
         user_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         user_label = Gtk.Label(label="Username:")
         user_label.set_width_chars(15)
@@ -105,8 +98,7 @@ class ProxyDialog(Gtk.Dialog):
         self.username_entry.set_placeholder_text("Optional")
         user_box.pack_start(self.username_entry, True, True, 0)
         auth_box.pack_start(user_box, False, False, 0)
-        
-        # Password
+
         pass_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         pass_label = Gtk.Label(label="Password:")
         pass_label.set_width_chars(15)
@@ -120,8 +112,7 @@ class ProxyDialog(Gtk.Dialog):
         
         auth_expander.add(auth_box)
         box.pack_start(auth_expander, False, False, 0)
-        
-        # Bypass list
+
         bypass_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         bypass_label = Gtk.Label(label="No Proxy For:")
         bypass_label.set_width_chars(15)
@@ -132,8 +123,7 @@ class ProxyDialog(Gtk.Dialog):
         self.bypass_entry.set_placeholder_text("localhost,127.0.0.1")
         bypass_box.pack_start(self.bypass_entry, True, True, 0)
         box.pack_start(bypass_box, False, False, 0)
-        
-        # Test result area
+
         self.test_revealer = Gtk.Revealer()
         self.test_revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
         
@@ -148,8 +138,7 @@ class ProxyDialog(Gtk.Dialog):
         
         self.test_revealer.add(result_box)
         box.pack_start(self.test_revealer, False, False, 0)
-        
-        # Info label with instructions
+
         info_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         
         info1 = Gtk.Label()
@@ -168,8 +157,7 @@ class ProxyDialog(Gtk.Dialog):
         info_box.pack_start(info3, False, False, 0)
         
         box.pack_start(info_box, False, False, 0)
-        
-        # Load current config
+
         self.load_current_config()
         
         self.connect("response", self.on_response)
@@ -207,8 +195,7 @@ class ProxyDialog(Gtk.Dialog):
         config = self.proxy_manager.get_current_proxy()
         if config.get('enabled'):
             proxy_type = config.get('type', 'http')
-            
-            # Set combo box
+
             type_map = {
                 'none': 0,
                 'http': 1,
@@ -216,7 +203,7 @@ class ProxyDialog(Gtk.Dialog):
                 'socks5': 3
             }
             
-            # Check if it's Tor
+            # check if it's Tor
             if proxy_type == 'socks5' and config.get('host') == '127.0.0.1' and config.get('port') == '9050':
                 self.type_combo.set_active(4)  # Tor
             else:
@@ -251,8 +238,7 @@ class ProxyDialog(Gtk.Dialog):
             self.username_entry.set_sensitive(True)
             self.password_entry.set_sensitive(True)
             self.bypass_entry.set_sensitive(True)
-            
-            # Set default ports based on type
+
             if active == 1:  # HTTP
                 if not self.port_entry.get_text():
                     self.port_entry.set_text("8080")
@@ -265,19 +251,16 @@ class ProxyDialog(Gtk.Dialog):
     
     def on_response(self, dialog, response):
         if response == Gtk.ResponseType.APPLY:
-            # Test proxy
             self.emit_stop_by_name("response")
             self.test_proxy()
             return
         
         if response == Gtk.ResponseType.OK:
-            # Apply proxy settings
             self.emit_stop_by_name("response")
             self.apply_proxy()
             return
 
         if response == Gtk.ResponseType.REJECT:
-            # Disable proxy
             self.emit_stop_by_name("response")
             self.type_combo.set_active(0)
             self.apply_proxy()
@@ -326,7 +309,6 @@ class ProxyDialog(Gtk.Dialog):
         if active == 0:  # None
             success, msg = self.proxy_manager.disable_proxy()
         else:
-            # Get values
             type_map = {
                 1: 'http',
                 2: 'https',
@@ -349,19 +331,15 @@ class ProxyDialog(Gtk.Dialog):
                 proxy_type, host, port, username, password, bypass
             )
         
-        # Update status
         self.update_status_label()
         
-        # Show result with better formatting
         if success:
-            # Parse the multi-line message
             lines = msg.split('\n')
             main_msg = lines[0]
             
             markup = f"<span color='#4CAF50' weight='bold'>✓ Applied Successfully</span>\n"
             markup += f"<small>{main_msg}</small>"
-            
-            # Add any additional info
+
             if len(lines) > 1:
                 for line in lines[1:]:
                     if line.strip():
@@ -372,8 +350,7 @@ class ProxyDialog(Gtk.Dialog):
             self.show_test_result(False, msg)
         
         self.test_revealer.set_reveal_child(True)
-        
-        # Auto-close after successful 
+
         if success:
             def close_later():
                 import time
