@@ -294,16 +294,44 @@ class BluetoothWindow(Gtk.Dialog):
 
         self.scanning = True
         self.store.clear()
+        self.scan_button.set_sensitive(False)
         self.scan_spinner.start()
         self.scan_spinner.show()
         self.set_status("Scanning for devices...", Gtk.MessageType.INFO)
 
+        self._scan_devices = {}
+        self._seen_macs = set()
+
         def on_device(device):
+            mac = device["mac"]
+            if mac in self._seen_macs:
+                return
+
+            self._seen_macs.add(mac)
+            self._scan_devices[mac] = device
+
             GLib.idle_add(self.add_device, device)
 
         self.manager.start_scan(on_device)
+
+        GLib.timeout_add_seconds(30, self.finish_scan)
+
         return False
-    
+
+    def finish_scan(self):
+        if not self.scanning:
+            return False
+
+        self.manager.stop_scan()
+
+        snapshot = self.manager.get_scan_results_snapshot()
+
+        merged = dict(snapshot)
+        merged.update(self._scan_devices)
+
+        self.update_device_list(list(merged.values()))
+        return False
+
     def add_device(self, device):
         self.store.append([
             device["name"],
@@ -318,43 +346,44 @@ class BluetoothWindow(Gtk.Dialog):
 
     
     def update_device_list(self, devices):
-        self.scan_button.set_sensitive(True)
         self.scan_spinner.stop()
         self.scan_spinner.hide()
+        self.scan_button.set_sensitive(True)
         self.scanning = False
         
         self.tree.set_opacity(0.3)
         
         self.store.clear()
         
-        paired_devices = [d for d in devices if d['paired']]
         unpaired_devices = [d for d in devices if not d['paired']]
+        paired_devices =  self.manager.get_connected_devices() 
         
-        for device in paired_devices:
-            status_parts = []
-            if device['connected']:
-                status_parts.append("Connected")
-            else:
-                status_parts.append("Paired")
-            
-            if device['trusted']:
-                status_parts.append("Trusted")
-            
-            status = ", ".join(status_parts)
-            
-            display_name = f"● {device['name']}" if device['connected'] else device['name']
-            
-            self.store.append([
-                display_name,
-                device['type'],
-                device['mac'],
-                status,
-                device['paired'],
-                device['connected'],
-                device.get('rssi', '')
-            ])
-        
+        if paired_devices:
+            log_debug(f"Connected devices: {paired_devices}")
+
+            for mac, name in paired_devices.items():
+                device_info = next((d for d in devices if d['mac'] == mac), {})
+
+                rssi = device_info.get("rssi")
+                rssi_str = f"{rssi} dBm" if rssi is not None else ""
+
+                self.store.append([
+                    f"● {name}",
+                    device_info.get("type", "Unknown"),
+                    mac,
+                    "Connected",
+                    True,
+                    True,
+                    rssi_str
+                ])
+
+        else:
+            log_debug("No connected devices found.")
+                
         for device in unpaired_devices:
+            rssi = device.get("rssi")
+            rssi_str = f"{rssi} dBm" if rssi is not None else ""
+
             self.store.append([
                 device['name'],
                 device['type'],
@@ -362,7 +391,7 @@ class BluetoothWindow(Gtk.Dialog):
                 "Not paired",
                 False,
                 False,
-                device.get('rssi', '')
+                rssi_str
             ])
         
         def fade_in(opacity=0.3):

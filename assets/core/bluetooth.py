@@ -1,8 +1,8 @@
 from typing import Dict, Any, Callable, Tuple, Optional
-from assets.utils.debug import log_debug
-
 import dbus
 import dbus.mainloop.glib
+from gi.repository import GLib
+from assets.utils.debug import log_debug
 
 dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
 
@@ -16,18 +16,17 @@ OBJ_MANAGER = "org.freedesktop.DBus.ObjectManager"
 class BluetoothManager:
     def __init__(self):
         self.bus = dbus.SystemBus()
-        self.manager = dbus.Interface(
-            self.bus.get_object(BLUEZ, "/"),
-            OBJ_MANAGER
-        )
+        self.manager = dbus.Interface(self.bus.get_object(BLUEZ, "/"), OBJ_MANAGER)
+
         self.adapter_path = self._find_adapter()
         self.adapter = dbus.Interface(
-            self.bus.get_object(BLUEZ, self.adapter_path),
-            ADAPTER_IFACE
+            self.bus.get_object(BLUEZ, self.adapter_path), ADAPTER_IFACE
         )
-        self._scan_callback: Optional[Callable[[Dict[str, Any]], None]] = None
-        self._scanning = False
 
+        self._scanning = False
+        self._scan_callback: Optional[Callable[[Dict[str, Any]], None]] = None
+
+        self._receiver_installed = False
 
     def _find_adapter(self) -> str:
         objects = self.manager.GetManagedObjects()
@@ -41,33 +40,35 @@ class BluetoothManager:
 
     def get_bluetooth_state(self) -> bool:
         props = dbus.Interface(
-            self.bus.get_object(BLUEZ, self.adapter_path),
-            PROPS_IFACE
+            self.bus.get_object(BLUEZ, self.adapter_path), PROPS_IFACE
         )
         return bool(props.Get(ADAPTER_IFACE, "Powered"))
 
     def set_bluetooth_state(self, enabled: bool) -> Tuple[bool, str]:
-        props = dbus.Interface(
-            self.bus.get_object(BLUEZ, self.adapter_path),
-            PROPS_IFACE
-        )
-        props.Set(ADAPTER_IFACE, "Powered", enabled)
-        return True, "Bluetooth enabled" if enabled else "Bluetooth disabled"
+        try:
+            props = dbus.Interface(
+                self.bus.get_object(BLUEZ, self.adapter_path), PROPS_IFACE
+            )
+            props.Set(ADAPTER_IFACE, "Powered", enabled)
+            return True, "Bluetooth enabled" if enabled else "Bluetooth disabled"
+        except Exception as e:
+            return False, str(e)
 
     def get_discoverable_state(self) -> bool:
         props = dbus.Interface(
-            self.bus.get_object(BLUEZ, self.adapter_path),
-            PROPS_IFACE
+            self.bus.get_object(BLUEZ, self.adapter_path), PROPS_IFACE
         )
         return bool(props.Get(ADAPTER_IFACE, "Discoverable"))
 
     def set_discoverable(self, enabled: bool) -> Tuple[bool, str]:
-        props = dbus.Interface(
-            self.bus.get_object(BLUEZ, self.adapter_path),
-            PROPS_IFACE
-        )
-        props.Set(ADAPTER_IFACE, "Discoverable", enabled)
-        return True, "Discoverable updated"
+        try:
+            props = dbus.Interface(
+                self.bus.get_object(BLUEZ, self.adapter_path), PROPS_IFACE
+            )
+            props.Set(ADAPTER_IFACE, "Discoverable", enabled)
+            return True, "Discoverable updated"
+        except Exception as e:
+            return False, str(e)
 
 
     def start_scan(self, on_device_found: Callable[[Dict[str, Any]], None] = None):
@@ -77,14 +78,20 @@ class BluetoothManager:
         self._scan_callback = on_device_found
         self._scanning = True
 
-        self.bus.add_signal_receiver(
-            self._on_interfaces_added,
-            dbus_interface=OBJ_MANAGER,
-            signal_name="InterfacesAdded"
-        )
+        if not self._receiver_installed:
+            self.bus.add_signal_receiver(
+                self._on_interfaces_added,
+                dbus_interface=OBJ_MANAGER,
+                signal_name="InterfacesAdded",
+            )
+            self._receiver_installed = True
 
-        self.adapter.StartDiscovery()
-        log_debug("Bluetooth discovery started")
+        try:
+            self.adapter.StartDiscovery()
+            log_debug("Bluetooth discovery started")
+        except Exception as e:
+            self._scanning = False
+            log_debug(f"StartDiscovery failed: {e}")
 
     def stop_scan(self):
         if not self._scanning:
@@ -98,16 +105,38 @@ class BluetoothManager:
         self._scanning = False
         log_debug("Bluetooth discovery stopped")
 
+    def get_scan_results_snapshot(self) -> Dict[str, Dict[str, Any]]:
+        devices: Dict[str, Dict[str, Any]] = {}
+        objects = self.manager.GetManagedObjects()
+
+        for path, ifaces in objects.items():
+            dev = ifaces.get(DEVICE_IFACE)
+            if not dev:
+                continue
+
+            device = self._device_from_bluez(path, dev)
+            mac = device["mac"]
+            if mac:
+                devices[mac] = device
+
+        return devices
+
     def _on_interfaces_added(self, path, interfaces):
         if not self._scanning:
             return
 
-        if DEVICE_IFACE not in interfaces:
+        dev = interfaces.get(DEVICE_IFACE)
+        if not dev:
             return
 
-        d = interfaces[DEVICE_IFACE]
+        device = self._device_from_bluez(path, dev)
 
-        device = {
+        if self._scan_callback and device["mac"]:
+            self._scan_callback(device)
+
+
+    def _device_from_bluez(self, path: str, d: Dict[str, Any]) -> Dict[str, Any]:
+        return {
             "path": path,
             "mac": str(d.get("Address", "")),
             "name": str(d.get("Name", d.get("Alias", "Unknown"))),
@@ -118,10 +147,6 @@ class BluetoothManager:
             "type": self._icon_to_type(str(d.get("Icon", ""))),
         }
 
-        if self._scan_callback:
-            self._scan_callback(device)
-
-
     def _get_device_by_mac(self, mac: str) -> Optional[str]:
         objects = self.manager.GetManagedObjects()
         for path, ifaces in objects.items():
@@ -130,68 +155,81 @@ class BluetoothManager:
                 return path
         return None
 
+    def get_connected_devices(self) -> Dict[str, str]:
+        connected = {}
+        objects = self.manager.GetManagedObjects()
+
+        for _, ifaces in objects.items():
+            dev = ifaces.get(DEVICE_IFACE)
+            if dev and dev.get("Connected"):
+                mac = str(dev.get("Address", ""))
+                name = str(dev.get("Name", dev.get("Alias", "Unknown")))
+                connected[mac] = name
+
+        return connected
+
     def pair_device(self, mac: str) -> Tuple[bool, str]:
         path = self._get_device_by_mac(mac)
         if not path:
             return False, "Device not found"
 
-        dbus.Interface(
-            self.bus.get_object(BLUEZ, path),
-            DEVICE_IFACE
-        ).Pair()
-        return True, "Device paired"
+        try:
+            dbus.Interface(self.bus.get_object(BLUEZ, path), DEVICE_IFACE).Pair()
+            return True, "Device paired"
+        except Exception as e:
+            return False, str(e)
 
     def connect_device(self, mac: str) -> Tuple[bool, str]:
         path = self._get_device_by_mac(mac)
         if not path:
             return False, "Device not found"
 
-        dbus.Interface(
-            self.bus.get_object(BLUEZ, path),
-            DEVICE_IFACE
-        ).Connect()
-        return True, "Device connected"
+        try:
+            dbus.Interface(self.bus.get_object(BLUEZ, path), DEVICE_IFACE).Connect()
+            return True, "Device connected"
+        except Exception as e:
+            return False, str(e)
 
     def disconnect_device(self, mac: str) -> Tuple[bool, str]:
         path = self._get_device_by_mac(mac)
         if not path:
             return False, "Device not found"
 
-        dbus.Interface(
-            self.bus.get_object(BLUEZ, path),
-            DEVICE_IFACE
-        ).Disconnect()
-        return True, "Device disconnected"
+        try:
+            dbus.Interface(self.bus.get_object(BLUEZ, path), DEVICE_IFACE).Disconnect()
+            return True, "Device disconnected"
+        except Exception as e:
+            return False, str(e)
 
     def trust_device(self, mac: str, trust: bool = True) -> Tuple[bool, str]:
         path = self._get_device_by_mac(mac)
         if not path:
             return False, "Device not found"
 
-        props = dbus.Interface(
-            self.bus.get_object(BLUEZ, path),
-            PROPS_IFACE
-        )
-        props.Set(DEVICE_IFACE, "Trusted", trust)
-        return True, "Device trusted" if trust else "Device untrusted"
+        try:
+            props = dbus.Interface(self.bus.get_object(BLUEZ, path), PROPS_IFACE)
+            props.Set(DEVICE_IFACE, "Trusted", trust)
+            return True, "Device trusted" if trust else "Device untrusted"
+        except Exception as e:
+            return False, str(e)
 
     def remove_device(self, mac: str) -> Tuple[bool, str]:
         path = self._get_device_by_mac(mac)
         if not path:
             return False, "Device not found"
 
-        self.adapter.RemoveDevice(path)
-        return True, "Device removed"
+        try:
+            self.adapter.RemoveDevice(path)
+            return True, "Device removed"
+        except Exception as e:
+            return False, str(e)
 
     def get_device_info(self, mac: str) -> Dict[str, Any]:
         path = self._get_device_by_mac(mac)
         if not path:
             return {}
 
-        props = dbus.Interface(
-            self.bus.get_object(BLUEZ, path),
-            PROPS_IFACE
-        )
+        props = dbus.Interface(self.bus.get_object(BLUEZ, path), PROPS_IFACE)
 
         return {
             "connected": bool(props.Get(DEVICE_IFACE, "Connected")),
