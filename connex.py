@@ -4,7 +4,7 @@ import subprocess
 import shlex
 import argparse
 import sys
-sys.path.append('/usr/lib/connex')
+sys.path.append('/usr/local/lib/connex')
 
 import json
 
