@@ -38,7 +38,7 @@ chmod +x ./install.sh
 | Linux Mint          |   ✅   |
 | Ubuntu              |   ✅   |
 | Debian              |   ❓   |
-| Fedora              |   ❓   |
+| Fedora              |   ✅   |
 | openSUSE            |   ❓   |
 | Manjaro             |   ❓   |
 | Pop!_OS             |   ❓   |
