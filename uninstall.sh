@@ -24,7 +24,7 @@ fi
 
 echo -e "${YELLOW}This will remove connex from your system${NC}"
 read -p "Continue? (y/N) " -n 1 -r
-echo
+echo ""
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo -e "${CYAN}Uninstallation cancelled${NC}"
     exit 0
