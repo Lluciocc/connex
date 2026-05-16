@@ -95,6 +95,30 @@ connex --debug
 connex --no-scan
 ```
 
+## Uninstallation
+
+Since connex is installed manually (not via a package manager), `apt remove` or similar commands won't work. Instead, use the included uninstall script:
+
+```bash
+# Clone the repository if you don't have it anymore
+git clone https://github.com/lluciocc/connex.git
+cd connex
+chmod +x ./uninstall.sh
+./uninstall.sh
+```
+
+Or download and run it directly:
+```bash
+curl -sSL https://raw.githubusercontent.com/Lluciocc/connex/master/uninstall.sh | bash
+```
+
+The script will:
+- Stop any running connex processes
+- Remove the executable from `/usr/local/bin/`
+- Remove application files from `/usr/local/lib/connex/`
+- Remove desktop entries, icons, and autostart config
+- Optionally remove your user configuration (`~/.config/connex/`)
+
 ## Configuration
 
 connex stores its configuration and logs in:
